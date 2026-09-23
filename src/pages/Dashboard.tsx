@@ -1,0 +1,320 @@
+import { useEffect, useState, useCallback } from 'react'
+import { supabase } from '../lib/supabase'
+import { Card } from '../components/ui/Card'
+import { Chip, TagPill, StatusPill } from '../components/ui/Pill'
+import { formatMoney, todayISO, vencimentoLabel } from '../lib/date'
+import { boletoEstado, isLembreteDashboard, ESTADO_LABEL } from '../lib/boletos'
+import type { AgendamentoStatus, Boleto } from '../types/database'
+
+// Capacidade de horários por dia — ajustável depois em Configurações (Fase 3).
+// Por ora fixa aqui para calcular "horários livres" e "ocupação".
+const CAPACIDADE_DIARIA = 10
+
+interface AgendamentoHoje {
+  id: string
+  hora: string
+  status: AgendamentoStatus
+  pagamento_status: 'pago' | 'pendente'
+  tipo_servico: 'avulso' | 'pacote'
+  valor: number | null
+  pet: { nome: string; tutor: { nome: string } | null } | null
+}
+
+export function Dashboard() {
+  const [loading, setLoading] = useState(true)
+  const [agendamentosHoje, setAgendamentosHoje] = useState<AgendamentoHoje[]>([])
+  const [boletos, setBoletos] = useState<Boleto[]>([])
+  const [estoqueAlerta, setEstoqueAlerta] = useState<
+    { id: string; nome: string; status: string; detalhe: string }[]
+  >([])
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const hoje = todayISO()
+
+    const [agRes, boletosRes, estoqueRes] = await Promise.all([
+      supabase
+        .from('agendamentos')
+        .select(
+          'id, hora, status, pagamento_status, tipo_servico, valor, pet:pets(nome, tutor:tutores(nome))'
+        )
+        .eq('data', hoje)
+        .order('hora', { ascending: true }),
+      supabase
+        .from('boletos')
+        .select('*')
+        .neq('status', 'pago')
+        .order('data_vencimento', { ascending: true }),
+      supabase
+        .from('estoque_produtos')
+        .select('id, nome, status')
+        .in('status', ['repor_agora', 'repor_em_breve']),
+    ])
+
+    setAgendamentosHoje((agRes.data as unknown as AgendamentoHoje[]) ?? [])
+    setBoletos(((boletosRes.data as Boleto[]) ?? []).filter(isLembreteDashboard))
+    setEstoqueAlerta(
+      ((estoqueRes.data as { id: string; nome: string; status: string }[]) ?? []).map((p) => ({
+        ...p,
+        detalhe: p.status === 'repor_agora' ? 'Repor agora' : 'Repor em breve',
+      }))
+    )
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  async function marcarAgendamento(id: string, status: AgendamentoStatus) {
+    await supabase.from('agendamentos').update({ status }).eq('id', id)
+    load()
+  }
+
+  async function marcarBoleto(id: string, status: 'pago' | 'adiado') {
+    if (status === 'pago') {
+      // Move para o financeiro como saída paga e some do lembrete.
+      const boleto = boletos.find((b) => b.id === id)
+      if (boleto) {
+        await supabase.from('financeiro_lancamentos').insert({
+          tipo: 'saida',
+          descricao: boleto.nome,
+          categoria: boleto.categoria,
+          valor: boleto.valor,
+          status_pagamento: 'pago',
+          boleto_id: boleto.id,
+        })
+      }
+      await supabase.from('boletos').update({ status: 'pago' }).eq('id', id)
+    } else {
+      // "Adiado" pede a nova data — por ora adia 7 dias; a Fase 2 troca por um
+      // seletor de data no próprio card.
+      const boleto = boletos.find((b) => b.id === id)
+      if (boleto) {
+        const nova = new Date(boleto.data_vencimento + 'T00:00:00')
+        nova.setDate(nova.getDate() + 7)
+        await supabase
+          .from('boletos')
+          .update({ data_vencimento: nova.toISOString().slice(0, 10) })
+          .eq('id', id)
+      }
+    }
+    load()
+  }
+
+  const banhosHoje = agendamentosHoje.length
+  const pendencias = agendamentosHoje.filter((a) => a.pagamento_status === 'pendente')
+  const valorPendente = pendencias.reduce((s, a) => s + (a.valor ?? 0), 0)
+  const ocupacaoPct = Math.min(100, Math.round((banhosHoje / CAPACIDADE_DIARIA) * 100))
+  const horariosLivres = Math.max(0, CAPACIDADE_DIARIA - banhosHoje)
+
+  return (
+    <div className="flex flex-col gap-[18px]">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-[23px] font-extrabold">Boa tarde, Janaína</div>
+          <div className="mt-[2px] text-[12.5px] text-text-muted">
+            Aqui está o resumo do seu dia
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          <Chip active>Hoje</Chip>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-text-muted">Carregando…</div>
+      ) : (
+        <>
+          <div className="flex gap-[14px]">
+            <Card tone="blue" className="relative flex-1 overflow-hidden p-5">
+              <div className="pointer-events-none absolute -right-10 -top-12 h-[150px] w-[150px] rounded-full bg-white/10 blur-sm" />
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-white/70">
+                Banhos hoje
+              </div>
+              <div className="mt-[6px] text-[40px] font-black">{banhosHoje}</div>
+            </Card>
+            <Card className="flex-1 p-5">
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
+                Horários livres
+              </div>
+              <div className="mt-[6px] text-[32px] font-extrabold">{horariosLivres}</div>
+            </Card>
+            <Card tone="terracota" className="flex-1 p-5">
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-terracota">
+                Pendências
+              </div>
+              <div className="mt-[6px] text-[28px] font-extrabold text-terracota-dark">
+                {formatMoney(valorPendente)}
+              </div>
+              <TagPill tone="terracota" className="mt-[10px]">
+                {pendencias.length} pendente{pendencias.length !== 1 ? 's' : ''}
+              </TagPill>
+            </Card>
+            <Card className="flex flex-1 items-center gap-[14px] p-5">
+              <div
+                className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full"
+                style={{
+                  background: `conic-gradient(#2f5d82 0% ${ocupacaoPct}%, #f0ebe0 ${ocupacaoPct}% 100%)`,
+                }}
+              >
+                <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-card text-[13px] font-extrabold">
+                  {ocupacaoPct}%
+                </div>
+              </div>
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
+                Ocupação
+              </div>
+            </Card>
+          </div>
+
+          <div className="flex gap-[14px]">
+            <Card tone="terracota" className="flex-1 p-5">
+              <div className="mb-[10px] flex items-center justify-between">
+                <div className="text-[13px] font-extrabold">Cobranças pendentes</div>
+                <TagPill tone="terracota">{pendencias.length}</TagPill>
+              </div>
+              {pendencias.length === 0 && (
+                <div className="text-[12px] text-text-muted">Nenhuma pendência hoje.</div>
+              )}
+              {pendencias.map((a) => (
+                <div key={a.id} className="flex items-center justify-between border-b border-terracota-border py-[7px] last:border-none">
+                  <div>
+                    <div className="text-[12.5px] font-bold">
+                      {a.pet?.nome} · {a.pet?.tutor?.nome ?? '—'}
+                    </div>
+                  </div>
+                  <div className="text-[13px] font-extrabold text-terracota-dark">
+                    {formatMoney(a.valor ?? 0)}
+                  </div>
+                </div>
+              ))}
+            </Card>
+
+            <Card className="flex-1 p-5">
+              <div className="mb-[10px] flex items-center justify-between">
+                <div className="text-[13px] font-extrabold">Boletos vencendo</div>
+                <TagPill tone="terracota">{boletos.length}</TagPill>
+              </div>
+              {boletos.length === 0 && (
+                <div className="text-[12px] text-text-muted">Nenhum boleto no radar.</div>
+              )}
+              {boletos.map((b) => {
+                const estado = boletoEstado(b)
+                return (
+                  <div key={b.id} className="border-b border-[#f0ebe0] py-2 last:border-none">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[12.5px] font-bold">{b.nome}</div>
+                      <div className="text-[13px] font-extrabold">{formatMoney(b.valor)}</div>
+                    </div>
+                    <div
+                      className={
+                        'mt-[2px] text-[11px] font-bold ' +
+                        (estado === 'atrasado' ? 'text-terracota-strong' : 'text-terracota')
+                      }
+                    >
+                      {estado === 'atrasado'
+                        ? `Seu boleto ${vencimentoLabel(b.data_vencimento).toLowerCase()}`
+                        : `Seu boleto está prestes a vencer · ${ESTADO_LABEL[estado]}`}
+                    </div>
+                    <div className="mt-[6px] flex gap-[5px]">
+                      <button
+                        onClick={() => marcarBoleto(b.id, 'pago')}
+                        className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[10px] py-1 text-[9.5px] font-extrabold text-white"
+                      >
+                        Pago
+                      </button>
+                      <button
+                        onClick={() => marcarBoleto(b.id, 'adiado')}
+                        className="rounded-pill border border-border px-[10px] py-1 text-[9.5px] font-extrabold text-text-soft"
+                      >
+                        Adiado
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </Card>
+
+            <Card tone="terracota" className="flex-1 p-5">
+              <div className="mb-[10px] flex items-center justify-between">
+                <div className="text-[13px] font-extrabold">Estoque para repor</div>
+                <TagPill tone="terracota">{estoqueAlerta.length}</TagPill>
+              </div>
+              {estoqueAlerta.length === 0 && (
+                <div className="text-[12px] text-text-muted">Estoque em dia.</div>
+              )}
+              {estoqueAlerta.map((p) => (
+                <div key={p.id} className="flex items-center justify-between border-b border-terracota-border py-[7px] last:border-none">
+                  <div className="text-[12.5px] font-bold">{p.nome}</div>
+                  <TagPill tone="terracota">{p.detalhe}</TagPill>
+                </div>
+              ))}
+            </Card>
+          </div>
+
+          <div className="mt-[2px] flex items-center gap-2">
+            <div className="text-[13px] font-extrabold">Banhos de hoje</div>
+            <TagPill>{banhosHoje} hoje</TagPill>
+          </div>
+
+          <div className="flex flex-col gap-[9px]">
+            {agendamentosHoje.length === 0 && (
+              <div className="text-[13px] text-text-muted">Nenhum agendamento para hoje.</div>
+            )}
+            {agendamentosHoje.map((a) => (
+              <div
+                key={a.id}
+                className={
+                  'flex items-center gap-[14px] rounded-[18px] p-[12px_16px] shadow-rowcard ' +
+                  (a.pagamento_status === 'pendente'
+                    ? 'border border-terracota-border bg-terracota-tint2'
+                    : 'bg-card')
+                }
+              >
+                <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-blue-tint text-[9px] font-bold text-blue">
+                  IMG
+                </div>
+                <div className="flex-grow">
+                  <div className="flex items-center gap-2">
+                    <div className="text-[14px] font-bold">{a.pet?.nome}</div>
+                    <TagPill tone={a.tipo_servico === 'pacote' ? 'blue' : 'neutral'}>
+                      {a.tipo_servico === 'pacote' ? 'Pacote' : 'Avulso'}
+                    </TagPill>
+                    {a.pagamento_status === 'pendente' && (
+                      <TagPill tone="terracota">Pagamento pendente</TagPill>
+                    )}
+                  </div>
+                  <div className="mt-[2px] text-[12px] text-text-muted">{a.hora.slice(0, 5)}</div>
+                </div>
+                <div className="flex gap-[6px]">
+                  <StatusPill
+                    active={a.status === 'realizado'}
+                    onClick={() => marcarAgendamento(a.id, 'realizado')}
+                  >
+                    Realizado
+                  </StatusPill>
+                  <StatusPill
+                    active={a.status === 'remarcado'}
+                    onClick={() => marcarAgendamento(a.id, 'remarcado')}
+                  >
+                    Remarcado
+                  </StatusPill>
+                  <StatusPill
+                    active={a.status === 'nao_realizado'}
+                    onClick={() => marcarAgendamento(a.id, 'nao_realizado')}
+                  >
+                    Não realizado
+                  </StatusPill>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
