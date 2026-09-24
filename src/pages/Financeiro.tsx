@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/Card'
 import { Chip, TagPill } from '../components/ui/Pill'
 import { formatBR, formatMoney, lastNDays, monthRange, todayISO, vencimentoLabel } from '../lib/date'
-import { boletoEstado, ESTADO_LABEL, ESTADO_CLASSES } from '../lib/boletos'
+import { boletoEstado, ESTADO_LABEL, ESTADO_CLASSES, pagarBoleto, adiarBoleto } from '../lib/boletos'
 import clsx from '../lib/clsx'
 import type { Boleto, FinanceiroLancamento } from '../types/database'
 
@@ -73,24 +73,8 @@ export function Financeiro() {
   async function marcarBoleto(id: string, status: 'pago' | 'adiado') {
     const boleto = boletos.find((b) => b.id === id)
     if (!boleto) return
-    if (status === 'pago') {
-      await supabase.from('financeiro_lancamentos').insert({
-        tipo: 'saida',
-        descricao: boleto.nome,
-        categoria: boleto.categoria,
-        valor: boleto.valor,
-        status_pagamento: 'pago',
-        boleto_id: boleto.id,
-      })
-      await supabase.from('boletos').update({ status: 'pago' }).eq('id', id)
-    } else {
-      const nova = new Date(boleto.data_vencimento + 'T00:00:00')
-      nova.setDate(nova.getDate() + 7)
-      await supabase
-        .from('boletos')
-        .update({ data_vencimento: nova.toISOString().slice(0, 10) })
-        .eq('id', id)
-    }
+    if (status === 'pago') await pagarBoleto(boleto)
+    else await adiarBoleto(boleto)
     load()
   }
 

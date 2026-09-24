@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/Card'
 import { Chip, TagPill, StatusPill } from '../components/ui/Pill'
 import { formatMoney, todayISO, vencimentoLabel } from '../lib/date'
-import { boletoEstado, isLembreteDashboard, ESTADO_LABEL } from '../lib/boletos'
+import { boletoEstado, isLembreteDashboard, ESTADO_LABEL, pagarBoleto, adiarBoleto } from '../lib/boletos'
 import type { AgendamentoStatus, Boleto } from '../types/database'
 
 // Capacidade de horários por dia — ajustável depois em Configurações (Fase 3).
@@ -73,33 +73,10 @@ export function Dashboard() {
   }
 
   async function marcarBoleto(id: string, status: 'pago' | 'adiado') {
-    if (status === 'pago') {
-      // Move para o financeiro como saída paga e some do lembrete.
-      const boleto = boletos.find((b) => b.id === id)
-      if (boleto) {
-        await supabase.from('financeiro_lancamentos').insert({
-          tipo: 'saida',
-          descricao: boleto.nome,
-          categoria: boleto.categoria,
-          valor: boleto.valor,
-          status_pagamento: 'pago',
-          boleto_id: boleto.id,
-        })
-      }
-      await supabase.from('boletos').update({ status: 'pago' }).eq('id', id)
-    } else {
-      // "Adiado" pede a nova data — por ora adia 7 dias; a Fase 2 troca por um
-      // seletor de data no próprio card.
-      const boleto = boletos.find((b) => b.id === id)
-      if (boleto) {
-        const nova = new Date(boleto.data_vencimento + 'T00:00:00')
-        nova.setDate(nova.getDate() + 7)
-        await supabase
-          .from('boletos')
-          .update({ data_vencimento: nova.toISOString().slice(0, 10) })
-          .eq('id', id)
-      }
-    }
+    const boleto = boletos.find((b) => b.id === id)
+    if (!boleto) return
+    if (status === 'pago') await pagarBoleto(boleto)
+    else await adiarBoleto(boleto)
     load()
   }
 

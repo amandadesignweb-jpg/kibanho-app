@@ -162,6 +162,20 @@ insert into tipos_pacote (nome, valor, banhos_por_ciclo) values
   ('Quinzenal', 130.00, 2),
   ('Avulso', 70.00, 1);
 
+-- Índices de performance (cobertura de foreign keys + consultas mais comuns)
+create index if not exists idx_agendamentos_pet_id on agendamentos(pet_id);
+create index if not exists idx_boletos_lancamento_id on boletos(lancamento_id);
+create index if not exists idx_financeiro_lancamentos_agendamento_id on financeiro_lancamentos(agendamento_id);
+create index if not exists idx_financeiro_lancamentos_boleto_id on financeiro_lancamentos(boleto_id);
+create index if not exists idx_pacotes_pet_pet_id on pacotes_pet(pet_id);
+create index if not exists idx_pacotes_pet_tipo_pacote_id on pacotes_pet(tipo_pacote_id);
+create index if not exists idx_pets_tutor_id on pets(tutor_id);
+create index if not exists idx_procedimentos_agendamento_id on procedimentos(agendamento_id);
+create index if not exists idx_procedimentos_pet_id on procedimentos(pet_id);
+create index if not exists idx_agendamentos_data on agendamentos(data);
+create index if not exists idx_financeiro_lancamentos_data on financeiro_lancamentos(data);
+create index if not exists idx_boletos_status on boletos(status);
+
 -- Storage
 insert into storage.buckets (id, name, public)
 values ('fotos-kibanho', 'fotos-kibanho', true)

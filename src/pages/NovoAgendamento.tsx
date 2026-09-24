@@ -31,6 +31,7 @@ export function NovoAgendamento() {
 
   const [data, setData] = useState(todayISO())
   const [hora, setHora] = useState('09:00')
+  const [pagamentoPendente, setPagamentoPendente] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -78,7 +79,7 @@ export function NovoAgendamento() {
         data,
         hora,
         status: 'confirmado',
-        pagamento_status: 'pago',
+        pagamento_status: pagamentoPendente ? 'pendente' : 'pago',
         valor: tipoServico === 'avulso' ? avulso?.valor ?? null : null,
       })
       .select('id')
@@ -178,6 +179,15 @@ export function NovoAgendamento() {
           />
         </div>
       </div>
+
+      <label className="flex items-center gap-[8px] text-[12.5px] font-semibold text-text-soft">
+        <input
+          type="checkbox"
+          checked={pagamentoPendente}
+          onChange={(e) => setPagamentoPendente(e.target.checked)}
+        />
+        Cobrar depois (pagamento pendente)
+      </label>
 
       {erro && <div className="text-[12.5px] font-semibold text-terracota-strong">{erro}</div>}
 
