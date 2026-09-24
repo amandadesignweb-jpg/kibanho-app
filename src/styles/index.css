@@ -7,3 +7,19 @@
     @apply bg-bg text-ink font-sans antialiased m-0;
   }
 }
+
+/* Impressão / "Salvar como PDF" — usado em Relatórios e no relatório de banho.
+   Esconde menu lateral e controles interativos, deixa só o conteúdo. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  .print-area {
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}

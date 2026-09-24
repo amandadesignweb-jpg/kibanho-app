@@ -38,6 +38,13 @@ function toISO(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+function nomeArquivoSeguro(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-zA-Z0-9.\-]/g, '_')
+}
+
 export function NovoAgendamento() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
@@ -50,6 +57,7 @@ export function NovoAgendamento() {
 
   const [novoPetNome, setNovoPetNome] = useState('')
   const [novoPetEspecie, setNovoPetEspecie] = useState('cão')
+  const [novoPetFoto, setNovoPetFoto] = useState<File | null>(null)
   const [novoTutorNome, setNovoTutorNome] = useState('')
   const [novoTutorTelefone, setNovoTutorTelefone] = useState('')
 
@@ -235,6 +243,16 @@ export function NovoAgendamento() {
         petIdFinal = pet.id
         nomePetFinal = novoPetNome
         nomeTutorFinal = novoTutorNome
+
+        // Foto é opcional — se falhar o upload, o pet já foi salvo e não bloqueia o agendamento.
+        if (novoPetFoto) {
+          const path = `pets/${pet.id}-${Date.now()}-${nomeArquivoSeguro(novoPetFoto.name)}`
+          const { error: erroUpload } = await supabase.storage.from('fotos-kibanho').upload(path, novoPetFoto)
+          if (!erroUpload) {
+            const { data: pub } = supabase.storage.from('fotos-kibanho').getPublicUrl(path)
+            await supabase.from('pets').update({ foto_url: pub.publicUrl }).eq('id', pet.id)
+          }
+        }
       }
 
       if (tipoServico === 'avulso') {
@@ -380,6 +398,17 @@ export function NovoAgendamento() {
               </>
             ) : (
               <div className="flex flex-col gap-2 rounded-2xl bg-[#f7f4ee] p-3">
+                <div className="flex items-center gap-2">
+                  <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-[1.5px] border-dashed border-blue bg-blue-tint text-[8px] font-bold text-blue">
+                    {novoPetFoto ? (
+                      <img src={URL.createObjectURL(novoPetFoto)} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      '+ Foto'
+                    )}
+                    <input type="file" accept="image/*" hidden onChange={(e) => setNovoPetFoto(e.target.files?.[0] ?? null)} />
+                  </label>
+                  <div className="text-[11px] text-text-muted">Foto do pet (opcional)</div>
+                </div>
                 <div className="flex gap-2">
                   <div className="flex-[1.4]">
                     <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Nome do pet</div>

@@ -88,21 +88,21 @@ export function Clientes() {
   }
 
   return (
-    <div className="flex flex-col gap-[18px]">
-      <div className="flex items-center justify-between">
-        <div className="text-[23px] font-extrabold">Clientes &amp; Pets</div>
+    <div className="flex h-[calc(100vh-48px)] flex-col gap-3">
+      <div className="flex shrink-0 items-center justify-between">
+        <div className="text-[19px] font-extrabold">Clientes &amp; Pets</div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <input
           placeholder="Buscar pet ou tutor…"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          className="flex-1 rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+          className="flex-1 rounded-xl border border-border bg-card px-[14px] py-[9px] text-[13px] outline-none focus:border-blue"
         />
         <button
           onClick={() => { setErro(null); setModalAberto(true) }}
-          className="whitespace-nowrap rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[11px] text-[13px] font-bold text-white"
+          className="whitespace-nowrap rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[9px] text-[13px] font-bold text-white"
         >
           + Novo pet
         </button>
@@ -111,26 +111,26 @@ export function Clientes() {
       {loading ? (
         <div className="text-text-muted">Carregando…</div>
       ) : (
-        <div className="grid grid-cols-3 gap-[14px]">
+        <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-4 gap-2.5 overflow-y-auto pb-2">
           {filtrados.map((p) => (
             <Link key={p.id} to={`/clientes/${p.id}`}>
-              <Card className="flex items-center gap-3 p-4 hover:shadow-lg">
+              <Card className="flex items-center gap-2.5 p-3 hover:shadow-lg">
                 {p.foto_url ? (
-                  <img src={p.foto_url} alt={p.nome} className="h-[42px] w-[42px] shrink-0 rounded-full object-cover" />
+                  <img src={p.foto_url} alt={p.nome} className="h-9 w-9 shrink-0 rounded-full object-cover" />
                 ) : (
-                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-blue-tint text-[9px] font-bold text-blue">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-tint text-[8px] font-bold text-blue">
                     IMG
                   </div>
                 )}
                 <div>
-                  <div className="text-[13.5px] font-bold">{p.nome}</div>
-                  <div className="text-[11.5px] text-text-muted">{p.tutor?.nome ?? '—'}</div>
+                  <div className="text-[12.5px] font-bold">{p.nome}</div>
+                  <div className="text-[11px] text-text-muted">{p.tutor?.nome ?? '—'}</div>
                 </div>
               </Card>
             </Link>
           ))}
           {filtrados.length === 0 && (
-            <div className="col-span-3 text-[13px] text-text-muted">Nenhum pet encontrado.</div>
+            <div className="col-span-4 text-[13px] text-text-muted">Nenhum pet encontrado.</div>
           )}
         </div>
       )}

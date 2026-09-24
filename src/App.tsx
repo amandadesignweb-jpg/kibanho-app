@@ -6,6 +6,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Agenda } from './pages/Agenda'
 import { NovoAgendamento } from './pages/NovoAgendamento'
 import { RegistroProcedimento } from './pages/RegistroProcedimento'
+import { RelatorioProcedimento } from './pages/RelatorioProcedimento'
 import { Clientes } from './pages/Clientes'
 import { FichaPet } from './pages/FichaPet'
 import { Financeiro } from './pages/Financeiro'
@@ -24,6 +25,7 @@ export function App() {
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/agenda/novo" element={<NovoAgendamento />} />
             <Route path="/agenda/:agendamentoId/registrar" element={<RegistroProcedimento />} />
+            <Route path="/procedimento/:procedimentoId" element={<RelatorioProcedimento />} />
             <Route path="/clientes" element={<Clientes />} />
             <Route path="/clientes/:id" element={<FichaPet />} />
             <Route path="/financeiro" element={<Financeiro />} />

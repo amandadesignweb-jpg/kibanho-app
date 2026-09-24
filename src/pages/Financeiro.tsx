@@ -8,6 +8,7 @@ import clsx from '../lib/clsx'
 import type { Boleto, FinanceiroLancamento } from '../types/database'
 
 const DIAS_FLUXO = 12
+const LANCAMENTOS_POR_PAGINA = 6
 
 function exportarCSV(lancamentos: FinanceiroLancamento[], periodoLabel: string) {
   const cabecalho = ['Data', 'Descrição', 'Tipo', 'Categoria', 'Valor', 'Status']
@@ -40,6 +41,7 @@ export function Financeiro() {
   const [erroBoleto, setErroBoleto] = useState<string | null>(null)
   const [adiandoId, setAdiandoId] = useState<string | null>(null)
   const [novaData, setNovaData] = useState('')
+  const [paginaLanc, setPaginaLanc] = useState(0)
 
   const { inicio, fim, label } = monthRange(periodo)
 
@@ -92,6 +94,10 @@ export function Financeiro() {
     load()
   }, [load])
 
+  useEffect(() => {
+    setPaginaLanc(0)
+  }, [periodo])
+
   async function pagar(id: string) {
     const boleto = boletos.find((b) => b.id === id)
     if (!boleto) return
@@ -121,12 +127,18 @@ export function Financeiro() {
   const fluxoMax = Math.max(1, ...fluxoValores.map((v) => Math.abs(v)))
   const diasFluxo = lastNDays(DIAS_FLUXO)
 
+  const totalPaginas = Math.max(1, Math.ceil(lancamentos.length / LANCAMENTOS_POR_PAGINA))
+  const lancamentosPagina = lancamentos.slice(
+    paginaLanc * LANCAMENTOS_POR_PAGINA,
+    paginaLanc * LANCAMENTOS_POR_PAGINA + LANCAMENTOS_POR_PAGINA
+  )
+
   return (
-    <div className="flex flex-col gap-[18px]">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[23px] font-extrabold">Financeiro</div>
-          <div className="mt-[2px] text-[12.5px] text-text-muted">{label}</div>
+          <div className="text-[19px] font-extrabold">Financeiro</div>
+          <div className="mt-[2px] text-[12px] text-text-muted">{label}</div>
         </div>
         <div className="flex items-center gap-2">
           <Chip active={periodo === 0} onClick={() => setPeriodo(0)}>
@@ -153,42 +165,42 @@ export function Financeiro() {
         <div className="text-text-muted">Carregando…</div>
       ) : (
         <>
-          <div className="flex gap-[14px]">
-            <Card tone="blue" className="relative flex-1 overflow-hidden p-5">
+          <div className="flex gap-3">
+            <Card tone="blue" className="relative flex-1 overflow-hidden p-3">
               <div className="pointer-events-none absolute -right-10 -top-12 h-[140px] w-[140px] rounded-full bg-white/10 blur-sm" />
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-white/70">Entradas</div>
-              <div className="mt-[6px] text-[30px] font-black">{formatMoney(totalEntradas)}</div>
-              <div className="mt-[10px] inline-block rounded-pill bg-white/15 px-[10px] py-1 text-[11px] font-bold">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-white/70">Entradas</div>
+              <div className="mt-1 text-[22px] font-black">{formatMoney(totalEntradas)}</div>
+              <div className="mt-2 inline-block rounded-pill bg-white/15 px-[10px] py-1 text-[10.5px] font-bold">
                 {entradas.length} banho{entradas.length !== 1 ? 's' : ''}
               </div>
             </Card>
-            <Card tone="terracota" className="flex-1 p-5">
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-terracota">Saídas</div>
-              <div className="mt-[6px] text-[26px] font-extrabold text-terracota-dark">{formatMoney(totalSaidas)}</div>
-              <div className="mt-[10px] inline-block rounded-pill bg-terracota-tint px-[10px] py-1 text-[11px] font-bold text-terracota-dark">
+            <Card tone="terracota" className="flex-1 p-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-terracota">Saídas</div>
+              <div className="mt-1 text-[20px] font-extrabold text-terracota-dark">{formatMoney(totalSaidas)}</div>
+              <div className="mt-2 inline-block rounded-pill bg-terracota-tint px-[10px] py-1 text-[10.5px] font-bold text-terracota-dark">
                 Gastos fixos + produtos
               </div>
             </Card>
-            <Card className="flex-1 p-5">
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Ticket médio</div>
-              <div className="mt-[6px] text-[26px] font-extrabold">{formatMoney(ticketMedio)}</div>
-              <div className="mt-[10px] text-[11px] text-text-muted">
+            <Card className="flex-1 p-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Ticket médio</div>
+              <div className="mt-1 text-[20px] font-extrabold">{formatMoney(ticketMedio)}</div>
+              <div className="mt-2 text-[10.5px] text-text-muted">
                 {entradas.length} banho{entradas.length !== 1 ? 's' : ''} no período
               </div>
             </Card>
-            <Card className="flex-1 p-5">
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Saldo do período</div>
-              <div className="mt-[6px] text-[26px] font-extrabold">{formatMoney(saldo)}</div>
-              <div className={clsx('mt-[10px] text-[11px] font-bold', saldo >= 0 ? 'text-blue' : 'text-terracota-strong')}>
+            <Card className="flex-1 p-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Saldo do período</div>
+              <div className="mt-1 text-[20px] font-extrabold">{formatMoney(saldo)}</div>
+              <div className={clsx('mt-2 text-[10.5px] font-bold', saldo >= 0 ? 'text-blue' : 'text-terracota-strong')}>
                 {saldo >= 0 ? 'Saldo positivo' : 'Saldo negativo'}
               </div>
             </Card>
           </div>
 
-          <div className="flex gap-[14px]">
-            <Card className="flex-[1.6] p-[22px]">
-              <div className="mb-4 text-[13px] font-extrabold">Fluxo de caixa — últimos {DIAS_FLUXO} dias</div>
-              <div className="flex h-[130px] items-end gap-[9px]">
+          <div className="flex gap-3">
+            <Card className="flex-[1.6] p-4">
+              <div className="mb-3 text-[12.5px] font-extrabold">Fluxo de caixa — últimos {DIAS_FLUXO} dias</div>
+              <div className="flex h-[100px] items-end gap-[9px]">
                 {diasFluxo.map((d) => {
                   const v = fluxo[d] ?? 0
                   const alturaPct = Math.max(4, Math.round((Math.abs(v) / fluxoMax) * 100))
@@ -213,8 +225,8 @@ export function Financeiro() {
               </div>
             </Card>
 
-            <Card className="flex flex-1 flex-col gap-[14px] p-[22px]">
-              <div className="text-[13px] font-extrabold">Pacotes x Avulsos</div>
+            <Card className="flex flex-1 flex-col gap-3 p-4">
+              <div className="text-[12.5px] font-extrabold">Pacotes x Avulsos</div>
               {totalServicos === 0 ? (
                 <div className="text-[12px] text-text-muted">Nenhum banho realizado no período.</div>
               ) : (
@@ -244,25 +256,48 @@ export function Financeiro() {
             </Card>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="text-[13px] font-extrabold">Lançamentos recentes</div>
-            <TagPill>{lancamentos.length} no período</TagPill>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="text-[13px] font-extrabold">Lançamentos recentes</div>
+              <TagPill>{lancamentos.length} no período</TagPill>
+            </div>
+            {lancamentos.length > LANCAMENTOS_POR_PAGINA && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPaginaLanc((p) => Math.max(0, p - 1))}
+                  disabled={paginaLanc === 0}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-card text-text-soft shadow-card disabled:opacity-40"
+                >
+                  ‹
+                </button>
+                <div className="text-[11px] text-text-muted">
+                  Página {paginaLanc + 1} de {totalPaginas}
+                </div>
+                <button
+                  onClick={() => setPaginaLanc((p) => Math.min(totalPaginas - 1, p + 1))}
+                  disabled={paginaLanc >= totalPaginas - 1}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-card text-text-soft shadow-card disabled:opacity-40"
+                >
+                  ›
+                </button>
+              </div>
+            )}
           </div>
 
-          <Card className="px-5 py-1">
+          <Card className="px-4 py-1">
             {lancamentos.length === 0 && (
               <div className="py-3 text-[13px] text-text-muted">Nenhum lançamento no período.</div>
             )}
-            {lancamentos.slice(0, 15).map((l) => (
-              <div key={l.id} className="flex items-center gap-[14px] border-b border-[#ece5d8] py-[11px] last:border-none">
-                <div className="w-[60px] shrink-0 text-[11.5px] text-text-faint">{formatBR(l.data)}</div>
-                <div className="flex-grow text-[13px] font-bold">{l.descricao}</div>
+            {lancamentosPagina.map((l) => (
+              <div key={l.id} className="flex items-center gap-3 border-b border-[#ece5d8] py-2 last:border-none">
+                <div className="w-[55px] shrink-0 text-[11px] text-text-faint">{formatBR(l.data)}</div>
+                <div className="flex-grow text-[12.5px] font-bold">{l.descricao}</div>
                 <TagPill tone={l.tipo === 'entrada' ? 'blue' : 'terracota'}>
                   {l.tipo === 'entrada' ? 'Entrada' : 'Saída'}
                 </TagPill>
                 <div
                   className={clsx(
-                    'w-20 text-right text-[13px] font-extrabold',
+                    'w-20 text-right text-[12.5px] font-extrabold',
                     l.tipo === 'saida' ? 'text-terracota-dark' : ''
                   )}
                 >
@@ -299,12 +334,12 @@ export function Financeiro() {
             load()
           }} />
 
-          <Card className="px-5 py-1">
+          <Card className="px-4 py-1">
             {boletos.length === 0 && <div className="py-3 text-[13px] text-text-muted">Nenhuma conta pendente.</div>}
             {boletos.map((b) => {
               const estado = boletoEstado(b)
               return (
-                <div key={b.id} className="flex items-center gap-[14px] border-b border-[#ece5d8] py-[13px] last:border-none">
+                <div key={b.id} className="flex items-center gap-[14px] border-b border-[#ece5d8] py-2 last:border-none">
                   <div className="flex-grow">
                     <div className="flex items-center gap-2">
                       <div className="text-[13px] font-bold">{b.nome}</div>

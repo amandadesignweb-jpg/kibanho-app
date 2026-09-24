@@ -21,18 +21,23 @@ Storage) no backend. Publicado em https://kibanho.netlify.app
   Procedimento (fotos — mínimo 1 obrigatório — + anotação + envio por
   WhatsApp).
 - ✅ Clientes & Pets (cadastro rápido em pop-up centralizado, com foto do pet
-  opcional) e Ficha do Pet (foto, progresso do pacote, próximos banhos
+  opcional — também disponível direto em "Novo agendamento" ao cadastrar um
+  pet novo) e Ficha do Pet, com dados editáveis (foto, nome, espécie, raça,
+  observações, tutor e telefone), progresso do pacote, próximos banhos
   agendados, histórico de pagamento e histórico de atendimentos expansível —
-  clique em cada atendimento pra ver fotos e anotação completas).
+  clique em cada atendimento pra ver fotos e anotação completas, baixar o
+  relatório em PDF ou reenviar o resumo pro tutor no WhatsApp.
 - ✅ Menu lateral retrátil (clique na setinha pra recolher/expandir; a
   preferência fica salva no navegador).
-- ✅ Financeiro completo (entradas/saídas, fluxo de caixa, boletos a pagar com
-  data de vencimento editável no "Adiado", exportação em CSV).
+- ✅ Financeiro completo (entradas/saídas, fluxo de caixa, lançamentos
+  paginados de 6 em 6 com setas, boletos a pagar com data de vencimento
+  editável no "Adiado", exportação em CSV).
 - ✅ Estoque (produtos em uso, laços) com consumo automático a cada banho
   registrado.
 - ✅ Relatórios (banhos, receita, ticket médio, serviços mais realizados —
-  Banho / Banho + tosa / Tosa higiênica —, % de clientes com pacote, estoque).
-- ✅ Configurações (dados da empresa, tipos de pacote — agora editáveis e
+  Banho / Banho + tosa / Tosa higiênica —, % de clientes com pacote, estoque)
+  com período à escolha (mês/trimestre/ano) e botão "Imprimir / Salvar PDF".
+- ✅ Configurações (dados da empresa, tipos de pacote — editáveis e
   excluíveis —, notificações, conta e segurança).
 
 Cada banho registrado em "Registro de Procedimento" dispara, sozinho: o
@@ -42,6 +47,20 @@ lançar nada manualmente depois de um atendimento.
 
 ## Pontos de atenção para a próxima rodada (não bloqueiam o uso)
 
+- **"Imprimir / Salvar PDF"** (Relatórios e no relatório de cada banho) usa a
+  função de impressão do navegador — no diálogo que abre, é só escolher
+  "Salvar como PDF" no lugar de uma impressora. Não gera o arquivo .pdf
+  direto por conta própria porque isso exigiria uma biblioteca extra; se
+  preferir esse caminho no lugar do diálogo de impressão, é um ajuste futuro.
+- **Telas sem rolagem**: Dashboard, Agenda, Clientes & Pets e Novo
+  Agendamento foram compactados e ajustados pra caber numa tela cheia sem
+  precisar rolar a página no dia a dia. Listas mais longas (cobranças,
+  boletos, estoque no Dashboard; pets em Clientes) ganharam uma rolagem
+  interna só dentro daquele cartão — é o jeito de não perder informação
+  quando o volume crescer, sem voltar a rolar a página inteira. Financeiro
+  resolve isso com a paginação dos lançamentos (6 por página); Relatórios
+  ficou mais compacto mas não recebeu o mesmo travamento de altura, porque
+  ali o conteúdo tende a variar mais com o período escolhido.
 - **"Pago" nas cobranças pendentes** do Dashboard marca o agendamento e o
   lançamento financeiro correspondente como pago, sem pedir a forma de
   pagamento de novo — se ela for importante nesse momento, é um ajuste

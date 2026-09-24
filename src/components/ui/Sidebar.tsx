@@ -87,7 +87,7 @@ export function Sidebar() {
   return (
     <div
       className={clsx(
-        'relative flex shrink-0 flex-col gap-1 bg-card p-[14px] pt-6 transition-[width] duration-200',
+        'no-print relative flex shrink-0 flex-col gap-1 bg-card p-[14px] pt-6 transition-[width] duration-200',
         colapsado ? 'w-[68px]' : 'w-[216px]'
       )}
     >

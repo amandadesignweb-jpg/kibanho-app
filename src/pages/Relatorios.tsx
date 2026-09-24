@@ -110,16 +110,28 @@ export function Relatorios() {
   const itensARepor = produtos.filter((p) => p.status !== 'em_uso').length
 
   return (
-    <div className="flex flex-col gap-[18px]">
+    <div className="print-area flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[23px] font-extrabold">Relatórios</div>
-          <div className="mt-[2px] text-[12.5px] text-text-muted">Visão consolidada do negócio</div>
+          <div className="text-[19px] font-extrabold">Relatórios</div>
+          <div className="mt-[2px] text-[12px] text-text-muted">
+            Visão consolidada do negócio ·{' '}
+            {periodo === 'mes' ? 'este mês' : periodo === 'trimestre' ? 'último trimestre' : 'este ano'}
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="no-print flex items-center gap-2">
           <Chip active={periodo === 'mes'} onClick={() => setPeriodo('mes')}>Este mês</Chip>
           <Chip active={periodo === 'trimestre'} onClick={() => setPeriodo('trimestre')}>Trimestre</Chip>
           <Chip active={periodo === 'ano'} onClick={() => setPeriodo('ano')}>Ano</Chip>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 rounded-pill bg-card px-4 py-[10px] text-[13px] font-bold text-text-soft shadow-card"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9V3h12v6M6 18H4a1 1 0 01-1-1v-5a1 1 0 011-1h16a1 1 0 011 1v5a1 1 0 01-1 1h-2M6 14h12v7H6z" />
+            </svg>
+            Imprimir / Salvar PDF
+          </button>
         </div>
       </div>
 
@@ -127,27 +139,27 @@ export function Relatorios() {
         <div className="text-text-muted">Carregando…</div>
       ) : (
         <>
-          <div className="flex gap-[14px]">
-            <Card className="flex-1 p-5">
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Total de banhos</div>
-              <div className="mt-[6px] text-[28px] font-extrabold">{totalBanhos}</div>
+          <div className="flex gap-3">
+            <Card className="flex-1 p-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Total de banhos</div>
+              <div className="mt-1 text-[22px] font-extrabold">{totalBanhos}</div>
             </Card>
-            <Card className="flex-1 p-5">
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Receita total</div>
-              <div className="mt-[6px] text-[28px] font-extrabold">{formatMoney(receitaTotal)}</div>
+            <Card className="flex-1 p-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Receita total</div>
+              <div className="mt-1 text-[22px] font-extrabold">{formatMoney(receitaTotal)}</div>
             </Card>
-            <Card className="flex-1 p-5">
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Ticket médio</div>
-              <div className="mt-[6px] text-[28px] font-extrabold">{formatMoney(ticketMedio)}</div>
+            <Card className="flex-1 p-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Ticket médio</div>
+              <div className="mt-1 text-[22px] font-extrabold">{formatMoney(ticketMedio)}</div>
             </Card>
-            <Card className="flex-1 p-5">
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Pacotes ativos</div>
-              <div className="mt-[6px] text-[28px] font-extrabold">{pacotesAtivos}</div>
+            <Card className="flex-1 p-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Pacotes ativos</div>
+              <div className="mt-1 text-[22px] font-extrabold">{pacotesAtivos}</div>
             </Card>
           </div>
 
-          <div className="flex gap-[14px]">
-            <Card className="flex-[1.4] p-[22px]">
+          <div className="flex gap-3">
+            <Card className="flex-[1.4] p-4">
               <div className="mb-4 text-[13px] font-extrabold">Banhos por semana</div>
               {semanas.length === 0 ? (
                 <div className="text-[12px] text-text-muted">Sem dados no período.</div>
@@ -173,7 +185,7 @@ export function Relatorios() {
               )}
             </Card>
 
-            <Card className="flex flex-1 flex-col gap-4 p-[22px]">
+            <Card className="flex flex-1 flex-col gap-3 p-4">
               <div className="text-[13px] font-extrabold">Serviços mais realizados</div>
               {totalTipo === 0 ? (
                 <div className="text-[12px] text-text-muted">Nenhum banho realizado no período.</div>
@@ -225,8 +237,8 @@ export function Relatorios() {
             {itensARepor > 0 && <TagPill tone="terracota">{itensARepor} ite{itensARepor !== 1 ? 'ns' : 'm'} a repor</TagPill>}
           </div>
 
-          <div className="flex gap-[14px]">
-            <Card className="flex-[1.5] px-[22px] py-[18px]">
+          <div className="flex gap-3">
+            <Card className="flex-[1.5] px-4 py-3">
               <div className="mb-2 text-[12px] font-extrabold">Produtos em uso</div>
               {produtos.length === 0 && <div className="text-[12px] text-text-muted">Nenhum produto ativo.</div>}
               {produtos.map((p) => (
@@ -241,12 +253,12 @@ export function Relatorios() {
                   </div>
                 </div>
               ))}
-              <Link to="/estoque" className="mt-[10px] block text-right text-[11.5px] font-bold text-blue">
+              <Link to="/estoque" className="no-print mt-[10px] block text-right text-[11.5px] font-bold text-blue">
                 Ver estoque completo →
               </Link>
             </Card>
 
-            <Card className="flex flex-1 flex-col gap-3 px-[22px] py-[18px]">
+            <Card className="flex flex-1 flex-col gap-2 px-4 py-3">
               <div className="text-[12px] font-extrabold">Laços</div>
               <div className="flex gap-[18px]">
                 <div>
