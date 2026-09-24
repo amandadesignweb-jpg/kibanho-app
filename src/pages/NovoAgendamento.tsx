@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatBR } from '../lib/date'
 import { TIPO_PROCEDIMENTO_LABEL, TIPO_PROCEDIMENTO_OPCOES } from '../lib/procedimentos'
+import { FORMA_PAGAMENTO_LABEL, FORMA_PAGAMENTO_OPCOES } from '../lib/pagamento'
 import clsx from '../lib/clsx'
-import type { TipoProcedimento } from '../types/database'
+import type { FormaPagamento, TipoProcedimento } from '../types/database'
 
 interface PetOpcao {
   id: string
@@ -16,10 +17,22 @@ interface TipoPacote {
   id: string
   nome: string
   valor: number
+  banhos_por_ciclo: number
 }
+
+interface Sessao {
+  data: string
+  hora: string
+}
+
+type TipoServicoUI = 'avulso' | 'pacote_ativo' | 'pacote_mensal' | 'pacote_quinzenal'
 
 const HORARIOS = ['09:00', '10:00', '11:00', '11:30', '14:00', '15:00', '15:30', '16:00', '16:30', '17:00']
 const DIAS_SEMANA = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
+const INTERVALO_DIAS: Record<'pacote_mensal' | 'pacote_quinzenal', number> = {
+  pacote_mensal: 7,
+  pacote_quinzenal: 15,
+}
 
 function toISO(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -30,13 +43,19 @@ export function NovoAgendamento() {
   const navigate = useNavigate()
   const petPreSelecionado = params.get('pet')
 
+  const [modoPet, setModoPet] = useState<'existente' | 'novo'>('existente')
   const [pets, setPets] = useState<PetOpcao[]>([])
   const [petId, setPetId] = useState(petPreSelecionado ?? '')
   const [busca, setBusca] = useState('')
 
+  const [novoPetNome, setNovoPetNome] = useState('')
+  const [novoPetEspecie, setNovoPetEspecie] = useState('cão')
+  const [novoTutorNome, setNovoTutorNome] = useState('')
+  const [novoTutorTelefone, setNovoTutorTelefone] = useState('')
+
   const [tiposPacote, setTiposPacote] = useState<TipoPacote[]>([])
   const [pacoteAtivoId, setPacoteAtivoId] = useState<string | null>(null)
-  const [tipoServico, setTipoServico] = useState<'avulso' | 'pacote'>('avulso')
+  const [tipoServico, setTipoServico] = useState<TipoServicoUI>('avulso')
   const [tipoProcedimento, setTipoProcedimento] = useState<TipoProcedimento>('banho')
 
   const dias = useMemo(() => Array.from({ length: 7 }, (_, i) => {
@@ -48,7 +67,12 @@ export function NovoAgendamento() {
   const [data, setData] = useState(toISO(dias[0]))
   const [hora, setHora] = useState('')
   const [horariosOcupados, setHorariosOcupados] = useState<string[]>([])
-  const [pagamentoPendente, setPagamentoPendente] = useState(false)
+  const [sessoes, setSessoes] = useState<Sessao[]>([])
+  const [ocupadosPorData, setOcupadosPorData] = useState<Record<string, string[]>>({})
+
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento | null>(null)
+  const [cobrarDepois, setCobrarDepois] = useState(false)
+
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -60,12 +84,12 @@ export function NovoAgendamento() {
       .then(({ data }) => setPets((data as unknown as PetOpcao[]) ?? []))
     supabase
       .from('tipos_pacote')
-      .select('id, nome, valor')
+      .select('id, nome, valor, banhos_por_ciclo')
       .then(({ data }) => setTiposPacote((data as TipoPacote[]) ?? []))
   }, [])
 
   useEffect(() => {
-    if (!petId) {
+    if (modoPet !== 'existente' || !petId) {
       setPacoteAtivoId(null)
       return
     }
@@ -76,8 +100,22 @@ export function NovoAgendamento() {
       .eq('status', 'ativo')
       .maybeSingle()
       .then(({ data }) => setPacoteAtivoId((data as { id: string } | null)?.id ?? null))
-  }, [petId])
+  }, [petId, modoPet])
 
+  // Pet novo nunca tem pacote ativo — sempre libera avulso/mensal/quinzenal.
+  useEffect(() => {
+    if (modoPet === 'novo') setPacoteAtivoId(null)
+  }, [modoPet])
+
+  // Se o serviço atual deixou de fazer sentido (ex.: pet passou a ter pacote ativo), corrige.
+  useEffect(() => {
+    if (tipoServico === 'pacote_ativo' && !pacoteAtivoId) setTipoServico('avulso')
+    if ((tipoServico === 'pacote_mensal' || tipoServico === 'pacote_quinzenal') && pacoteAtivoId) {
+      setTipoServico('pacote_ativo')
+    }
+  }, [pacoteAtivoId, tipoServico])
+
+  // Horários ocupados no dia escolhido para a primeira sessão (avulso / pacote ativo / início do pacote).
   useEffect(() => {
     supabase
       .from('agendamentos')
@@ -90,42 +128,186 @@ export function NovoAgendamento() {
       })
   }, [data])
 
-  const avulso = tiposPacote.find((t) => t.nome === 'Avulso')
-  const petSelecionado = pets.find((p) => p.id === petId)
-
-  async function salvar() {
-    if (!petId) {
-      setErro('Selecione um pet.')
+  // Gera as sessões futuras quando o serviço é um pacote novo (mensal/quinzenal) e já há hora escolhida.
+  useEffect(() => {
+    if (tipoServico !== 'pacote_mensal' && tipoServico !== 'pacote_quinzenal') {
+      setSessoes([])
       return
     }
     if (!hora) {
-      setErro('Selecione um horário.')
+      setSessoes([])
       return
     }
+    const nomeTipo = tipoServico === 'pacote_mensal' ? 'Mensal' : 'Quinzenal'
+    const tipo = tiposPacote.find((t) => t.nome === nomeTipo)
+    const n = tipo?.banhos_por_ciclo ?? (tipoServico === 'pacote_mensal' ? 4 : 2)
+    const intervalo = INTERVALO_DIAS[tipoServico]
+    const base = new Date(data + 'T00:00:00')
+    const novas: Sessao[] = Array.from({ length: n }, (_, i) => {
+      const d = new Date(base)
+      d.setDate(d.getDate() + i * intervalo)
+      return { data: toISO(d), hora }
+    })
+    setSessoes(novas)
+  }, [tipoServico, data, hora, tiposPacote])
+
+  // Checa conflitos de horário para as datas das sessões geradas (ou editadas manualmente).
+  useEffect(() => {
+    if (sessoes.length === 0) {
+      setOcupadosPorData({})
+      return
+    }
+    const datasUnicas = Array.from(new Set(sessoes.map((s) => s.data)))
+    supabase
+      .from('agendamentos')
+      .select('data, hora')
+      .in('data', datasUnicas)
+      .neq('status', 'cancelado')
+      .then(({ data: rows }) => {
+        const mapa: Record<string, string[]> = {}
+        for (const r of (rows as { data: string; hora: string }[] | null) ?? []) {
+          const h = r.hora.slice(0, 5)
+          mapa[r.data] = [...(mapa[r.data] ?? []), h]
+        }
+        setOcupadosPorData(mapa)
+      })
+  }, [JSON.stringify(sessoes.map((s) => s.data))]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const avulso = tiposPacote.find((t) => t.nome === 'Avulso')
+  const petSelecionado = pets.find((p) => p.id === petId)
+  const nomePetConfirmacao = modoPet === 'novo' ? novoPetNome : petSelecionado?.nome
+  const ehPacoteNovo = tipoServico === 'pacote_mensal' || tipoServico === 'pacote_quinzenal'
+  const exigePagamentoAgora = tipoServico === 'avulso' || ehPacoteNovo
+
+  function atualizarSessao(i: number, campo: 'data' | 'hora', valor: string) {
+    setSessoes((s) => s.map((sess, idx) => (idx === i ? { ...sess, [campo]: valor } : sess)))
+  }
+
+  function removerSessao(i: number) {
+    setSessoes((s) => s.filter((_, idx) => idx !== i))
+  }
+
+  async function salvar() {
+    if (modoPet === 'existente' && !petId) {
+      setErro('Selecione um pet.')
+      return
+    }
+    if (modoPet === 'novo' && (!novoPetNome || !novoTutorNome)) {
+      setErro('Preencha o nome do pet e do tutor.')
+      return
+    }
+    if (!hora) {
+      setErro(ehPacoteNovo ? 'Selecione o horário do primeiro atendimento.' : 'Selecione um horário.')
+      return
+    }
+    if (ehPacoteNovo && sessoes.length === 0) {
+      setErro('Não foi possível gerar os atendimentos do pacote.')
+      return
+    }
+    if (exigePagamentoAgora && !cobrarDepois && !formaPagamento) {
+      setErro('Escolha a forma de pagamento ou marque "Cobrar depois".')
+      return
+    }
+
     setSalvando(true)
     setErro(null)
 
-    const { data: agendamento, error } = await supabase
-      .from('agendamentos')
-      .insert({
-        pet_id: petId,
-        tipo_servico: tipoServico,
-        tipo_procedimento: tipoProcedimento,
-        data,
-        hora,
-        status: 'confirmado',
-        pagamento_status: pagamentoPendente ? 'pendente' : 'pago',
-        valor: tipoServico === 'avulso' ? avulso?.valor ?? null : null,
-      })
-      .select('id')
-      .single()
+    try {
+      let petIdFinal = petId
+      let nomePetFinal = petSelecionado?.nome ?? ''
+      let nomeTutorFinal = petSelecionado?.tutor?.nome ?? ''
 
-    setSalvando(false)
-    if (error || !agendamento) {
-      setErro('Não foi possível salvar. Tente novamente.')
-      return
+      if (modoPet === 'novo') {
+        const { data: tutor, error: erroTutor } = await supabase
+          .from('tutores')
+          .insert({ nome: novoTutorNome, telefone: novoTutorTelefone || null })
+          .select('id')
+          .single()
+        if (erroTutor || !tutor) throw new Error('Não foi possível cadastrar o tutor.')
+
+        const { data: pet, error: erroPet } = await supabase
+          .from('pets')
+          .insert({ tutor_id: tutor.id, nome: novoPetNome, especie: novoPetEspecie })
+          .select('id')
+          .single()
+        if (erroPet || !pet) throw new Error('Não foi possível cadastrar o pet.')
+
+        petIdFinal = pet.id
+        nomePetFinal = novoPetNome
+        nomeTutorFinal = novoTutorNome
+      }
+
+      if (tipoServico === 'avulso') {
+        const { error } = await supabase.from('agendamentos').insert({
+          pet_id: petIdFinal,
+          tipo_servico: 'avulso',
+          tipo_procedimento: tipoProcedimento,
+          data,
+          hora,
+          status: 'confirmado',
+          pagamento_status: cobrarDepois ? 'pendente' : 'pago',
+          forma_pagamento: cobrarDepois ? null : formaPagamento,
+          valor: avulso?.valor ?? null,
+        })
+        if (error) throw new Error('Não foi possível salvar o agendamento.')
+      } else if (tipoServico === 'pacote_ativo') {
+        const { error } = await supabase.from('agendamentos').insert({
+          pet_id: petIdFinal,
+          tipo_servico: 'pacote',
+          tipo_procedimento: tipoProcedimento,
+          data,
+          hora,
+          status: 'confirmado',
+          pagamento_status: 'pago',
+          forma_pagamento: null,
+          valor: null,
+        })
+        if (error) throw new Error('Não foi possível salvar o agendamento.')
+      } else {
+        // Pacote novo (mensal/quinzenal): cria o pacote, lança o pagamento e agenda as sessões.
+        const nomeTipo = tipoServico === 'pacote_mensal' ? 'Mensal' : 'Quinzenal'
+        const tipoPacote = tiposPacote.find((t) => t.nome === nomeTipo)
+        if (!tipoPacote) throw new Error(`Tipo de pacote "${nomeTipo}" não encontrado em Configurações.`)
+
+        const { data: novoPacote, error: erroPacote } = await supabase
+          .from('pacotes_pet')
+          .insert({ pet_id: petIdFinal, tipo_pacote_id: tipoPacote.id, status: 'ativo', banhos_usados_ciclo: 0 })
+          .select('id')
+          .single()
+        if (erroPacote || !novoPacote) throw new Error('Não foi possível criar o pacote.')
+
+        const { error: erroLancamento } = await supabase.from('financeiro_lancamentos').insert({
+          tipo: 'entrada',
+          descricao: `Pacote ${nomeTipo} · ${nomePetFinal} · ${nomeTutorFinal}`,
+          categoria: 'Pacote',
+          valor: tipoPacote.valor,
+          status_pagamento: cobrarDepois ? 'pendente' : 'pago',
+          forma_pagamento: cobrarDepois ? null : formaPagamento,
+        })
+        if (erroLancamento) throw new Error('Pacote criado, mas não foi possível lançar o pagamento no financeiro.')
+
+        const { error: erroSessoes } = await supabase.from('agendamentos').insert(
+          sessoes.map((s) => ({
+            pet_id: petIdFinal,
+            tipo_servico: 'pacote' as const,
+            tipo_procedimento: tipoProcedimento,
+            data: s.data,
+            hora: s.hora,
+            status: 'confirmado' as const,
+            pagamento_status: 'pago' as const,
+            forma_pagamento: null,
+            valor: null,
+          }))
+        )
+        if (erroSessoes) throw new Error('Pacote criado, mas não foi possível agendar as sessões. Agende-as manualmente na Agenda.')
+      }
+
+      navigate('/agenda')
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível salvar. Tente novamente.')
+    } finally {
+      setSalvando(false)
     }
-    navigate('/agenda')
   }
 
   const petsFiltrados = pets.filter(
@@ -140,29 +322,101 @@ export function NovoAgendamento() {
 
       <div>
         <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Pet</div>
-        <input
-          placeholder="Buscar pet ou tutor…"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="mb-2 w-full rounded-xl border border-border px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
-        />
-        <div className="flex flex-wrap gap-2">
-          {petsFiltrados.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setPetId(p.id)}
-              className={clsx(
-                'flex flex-col items-center gap-1 rounded-2xl border-[1.5px] px-4 py-[10px]',
-                petId === p.id ? 'border-blue bg-blue-tint' : 'border-border-soft'
-              )}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-tint text-[9px] font-bold text-blue">
-                IMG
-              </div>
-              <div className="text-[12px] font-bold">{p.nome}</div>
-            </button>
-          ))}
+        <div className="mb-3 flex gap-2">
+          <button
+            onClick={() => setModoPet('existente')}
+            className={clsx(
+              'rounded-pill border px-4 py-2 text-[12.5px] font-bold',
+              modoPet === 'existente' ? 'border-ink bg-ink text-[#fdfbf8]' : 'border-border text-text-soft'
+            )}
+          >
+            Pet cadastrado
+          </button>
+          <button
+            onClick={() => setModoPet('novo')}
+            className={clsx(
+              'rounded-pill border px-4 py-2 text-[12.5px] font-bold',
+              modoPet === 'novo' ? 'border-ink bg-ink text-[#fdfbf8]' : 'border-border text-text-soft'
+            )}
+          >
+            Cadastrar novo pet
+          </button>
         </div>
+
+        {modoPet === 'existente' ? (
+          <>
+            <input
+              placeholder="Buscar pet ou tutor…"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="mb-2 w-full rounded-xl border border-border px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+            />
+            <div className="flex flex-wrap gap-2">
+              {petsFiltrados.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setPetId(p.id)}
+                  className={clsx(
+                    'flex flex-col items-center gap-1 rounded-2xl border-[1.5px] px-4 py-[10px]',
+                    petId === p.id ? 'border-blue bg-blue-tint' : 'border-border-soft'
+                  )}
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-tint text-[9px] font-bold text-blue">
+                    IMG
+                  </div>
+                  <div className="text-[12px] font-bold">{p.nome}</div>
+                </button>
+              ))}
+              {petsFiltrados.length === 0 && (
+                <div className="text-[12.5px] text-text-muted">Nenhum pet encontrado.</div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col gap-3 rounded-2xl bg-[#f7f4ee] p-4">
+            <div className="flex gap-3">
+              <div className="flex-[1.4]">
+                <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Nome do pet</div>
+                <input
+                  value={novoPetNome}
+                  onChange={(e) => setNovoPetNome(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+                />
+              </div>
+              <div className="flex-1">
+                <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Espécie</div>
+                <select
+                  value={novoPetEspecie}
+                  onChange={(e) => setNovoPetEspecie(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+                >
+                  <option value="cão">Cão</option>
+                  <option value="gato">Gato</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Nome do tutor</div>
+                <input
+                  value={novoTutorNome}
+                  onChange={(e) => setNovoTutorNome(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+                />
+              </div>
+              <div className="flex-1">
+                <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Telefone</div>
+                <input
+                  value={novoTutorTelefone}
+                  onChange={(e) => setNovoTutorTelefone(e.target.value)}
+                  placeholder="(11) 90000-0000"
+                  className="w-full rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div>
@@ -179,19 +433,50 @@ export function NovoAgendamento() {
           >
             Avulso {avulso ? `(R$ ${avulso.valor.toFixed(0)})` : ''}
           </button>
-          <button
-            disabled={!pacoteAtivoId}
-            onClick={() => setTipoServico('pacote')}
-            className={clsx(
-              'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold disabled:cursor-not-allowed disabled:opacity-40',
-              tipoServico === 'pacote'
-                ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
-                : 'border-border-soft text-text-soft'
-            )}
-          >
-            {pacoteAtivoId ? 'Usar pacote ativo' : 'Sem pacote ativo'}
-          </button>
+          {pacoteAtivoId ? (
+            <button
+              onClick={() => setTipoServico('pacote_ativo')}
+              className={clsx(
+                'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold',
+                tipoServico === 'pacote_ativo'
+                  ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                  : 'border-border-soft text-text-soft'
+              )}
+            >
+              Usar pacote ativo
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setTipoServico('pacote_mensal')}
+                className={clsx(
+                  'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold',
+                  tipoServico === 'pacote_mensal'
+                    ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                    : 'border-border-soft text-text-soft'
+                )}
+              >
+                Pacote mensal
+              </button>
+              <button
+                onClick={() => setTipoServico('pacote_quinzenal')}
+                className={clsx(
+                  'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold',
+                  tipoServico === 'pacote_quinzenal'
+                    ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                    : 'border-border-soft text-text-soft'
+                )}
+              >
+                Pacote quinzenal
+              </button>
+            </>
+          )}
         </div>
+        {ehPacoteNovo && (
+          <div className="mt-2 text-[11.5px] text-text-muted">
+            Cria o pacote, agenda automaticamente os próximos atendimentos e cobra o pacote inteiro agora.
+          </div>
+        )}
       </div>
 
       <div>
@@ -215,7 +500,9 @@ export function NovoAgendamento() {
       </div>
 
       <div>
-        <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Data e horário</div>
+        <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
+          {ehPacoteNovo ? 'Data e horário do primeiro atendimento' : 'Data e horário'}
+        </div>
         <div className="mb-3 flex gap-[6px]">
           {dias.map((d) => {
             const iso = toISO(d)
@@ -262,7 +549,79 @@ export function NovoAgendamento() {
         </div>
       </div>
 
-      {petSelecionado && hora && (
+      {ehPacoteNovo && sessoes.length > 0 && (
+        <div>
+          <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
+            Próximos atendimentos do pacote ({sessoes.length})
+          </div>
+          <div className="flex flex-col gap-2">
+            {sessoes.map((s, i) => {
+              const ocupado = i > 0 && (ocupadosPorData[s.data] ?? []).includes(s.hora)
+              return (
+                <div key={i} className="flex items-center gap-2 rounded-xl bg-[#f7f4ee] px-3 py-[9px]">
+                  <div className="w-5 text-center text-[11px] font-extrabold text-text-faint">{i + 1}</div>
+                  <input
+                    type="date"
+                    value={s.data}
+                    onChange={(e) => atualizarSessao(i, 'data', e.target.value)}
+                    className="rounded-lg border border-border bg-card px-2 py-[6px] text-[11.5px] outline-none focus:border-blue"
+                  />
+                  <input
+                    type="time"
+                    value={s.hora}
+                    onChange={(e) => atualizarSessao(i, 'hora', e.target.value)}
+                    className="rounded-lg border border-border bg-card px-2 py-[6px] text-[11.5px] outline-none focus:border-blue"
+                  />
+                  {ocupado && (
+                    <span className="text-[10.5px] font-bold text-terracota-strong">Horário já ocupado</span>
+                  )}
+                  <button
+                    onClick={() => removerSessao(i)}
+                    className="ml-auto text-[11px] font-bold text-text-faint hover:text-terracota-strong"
+                  >
+                    Remover
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {exigePagamentoAgora && (
+        <div>
+          <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
+            Pagamento {ehPacoteNovo ? '(pacote inteiro)' : ''}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {FORMA_PAGAMENTO_OPCOES.map((f) => (
+              <button
+                key={f}
+                onClick={() => { setFormaPagamento(f); setCobrarDepois(false) }}
+                disabled={cobrarDepois}
+                className={clsx(
+                  'flex-1 rounded-2xl border-[1.5px] py-[10px] text-center text-[12.5px] font-bold disabled:opacity-40',
+                  formaPagamento === f && !cobrarDepois
+                    ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                    : 'border-border-soft text-text-soft'
+                )}
+              >
+                {FORMA_PAGAMENTO_LABEL[f]}
+              </button>
+            ))}
+          </div>
+          <label className="mt-2 flex items-center gap-[8px] text-[12.5px] font-semibold text-text-soft">
+            <input
+              type="checkbox"
+              checked={cobrarDepois}
+              onChange={(e) => { setCobrarDepois(e.target.checked); if (e.target.checked) setFormaPagamento(null) }}
+            />
+            Cobrar depois (pagamento pendente)
+          </label>
+        </div>
+      )}
+
+      {nomePetConfirmacao && hora && (
         <div className="flex items-center gap-[10px] rounded-2xl bg-[#f7f4ee] px-4 py-3">
           <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] bg-blue-tint text-blue-dark">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -271,20 +630,13 @@ export function NovoAgendamento() {
             </svg>
           </div>
           <div className="text-[12.5px]">
-            <b>{petSelecionado.nome}</b> · {tipoServico === 'pacote' ? 'Pacote ativo' : 'Avulso'} ·{' '}
-            {DIAS_SEMANA[new Date(data + 'T00:00:00').getDay()]}, {formatBR(data)} às <b>{hora}</b>
+            <b>{nomePetConfirmacao}</b> ·{' '}
+            {tipoServico === 'avulso' ? 'Avulso' : tipoServico === 'pacote_ativo' ? 'Pacote ativo' : tipoServico === 'pacote_mensal' ? 'Pacote mensal (novo)' : 'Pacote quinzenal (novo)'}
+            {' '}· {DIAS_SEMANA[new Date(data + 'T00:00:00').getDay()]}, {formatBR(data)} às <b>{hora}</b>
+            {ehPacoteNovo && sessoes.length > 0 && ` · +${sessoes.length - 1} atendimento${sessoes.length - 1 !== 1 ? 's' : ''} agendados`}
           </div>
         </div>
       )}
-
-      <label className="flex items-center gap-[8px] text-[12.5px] font-semibold text-text-soft">
-        <input
-          type="checkbox"
-          checked={pagamentoPendente}
-          onChange={(e) => setPagamentoPendente(e.target.checked)}
-        />
-        Cobrar depois (pagamento pendente)
-      </label>
 
       {erro && <div className="text-[12.5px] font-semibold text-terracota-strong">{erro}</div>}
 

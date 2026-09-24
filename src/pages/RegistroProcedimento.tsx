@@ -9,12 +9,22 @@ interface AgendamentoInfo {
   pet_id: string
   tipo_servico: 'avulso' | 'pacote'
   pagamento_status: 'pago' | 'pendente'
+  forma_pagamento: 'pix' | 'credito' | 'debito' | 'dinheiro' | null
   valor: number | null
   pet: { nome: string; tutor: { nome: string; telefone: string | null } | null } | null
 }
 
 function apenasDigitos(s: string): string {
   return s.replace(/\D/g, '')
+}
+
+/** Remove espaços e caracteres fora de a-z/0-9/./-  do nome do arquivo, pra evitar
+ * rejeição de path no Storage (fotos de celular costumam vir com espaços/acentos). */
+function nomeArquivoSeguro(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-zA-Z0-9.\-]/g, '_')
 }
 
 export function RegistroProcedimento() {
@@ -32,7 +42,7 @@ export function RegistroProcedimento() {
     if (!agendamentoId) return
     supabase
       .from('agendamentos')
-      .select('id, pet_id, tipo_servico, pagamento_status, valor, pet:pets(nome, tutor:tutores(nome, telefone))')
+      .select('id, pet_id, tipo_servico, pagamento_status, forma_pagamento, valor, pet:pets(nome, tutor:tutores(nome, telefone))')
       .eq('id', agendamentoId)
       .single()
       .then(({ data }) => setInfo(data as unknown as AgendamentoInfo))
@@ -45,20 +55,24 @@ export function RegistroProcedimento() {
 
   async function concluir(enviarWhatsapp: boolean) {
     if (!info || !agendamentoId) return
+    if (fotos.length === 0) {
+      setErro('Adicione pelo menos 1 foto do banho antes de salvar.')
+      return
+    }
     setSalvando(true)
     setErro(null)
 
     try {
       const urls: string[] = []
       for (const foto of fotos) {
-        const path = `procedimentos/${agendamentoId}/${Date.now()}-${foto.name}`
+        const path = `procedimentos/${agendamentoId}/${Date.now()}-${nomeArquivoSeguro(foto.name)}`
         const { error: upErr } = await supabase.storage.from('fotos-kibanho').upload(path, foto)
-        if (upErr) throw upErr
+        if (upErr) throw new Error(`Falha ao enviar foto: ${upErr.message}`)
         const { data: pub } = supabase.storage.from('fotos-kibanho').getPublicUrl(path)
         urls.push(pub.publicUrl)
       }
 
-      await supabase.from('procedimentos').insert({
+      const { error: erroProcedimento } = await supabase.from('procedimentos').insert({
         agendamento_id: agendamentoId,
         pet_id: info.pet_id,
         data: todayISO(),
@@ -66,18 +80,25 @@ export function RegistroProcedimento() {
         anotacao_tutor: anotacao || null,
         enviado_whatsapp: enviarWhatsapp,
       })
+      if (erroProcedimento) throw new Error(`Falha ao registrar o procedimento: ${erroProcedimento.message}`)
 
-      await supabase.from('agendamentos').update({ status: 'realizado' }).eq('id', agendamentoId)
+      const { error: erroStatus } = await supabase
+        .from('agendamentos')
+        .update({ status: 'realizado' })
+        .eq('id', agendamentoId)
+      if (erroStatus) throw new Error(`Falha ao atualizar o agendamento: ${erroStatus.message}`)
 
       // Gera o lançamento financeiro correspondente ao banho (entrada), refletido em Financeiro.
-      await supabase.from('financeiro_lancamentos').insert({
+      const { error: erroLancamento } = await supabase.from('financeiro_lancamentos').insert({
         tipo: 'entrada',
         descricao: `${info.pet?.nome ?? 'Pet'} · ${info.pet?.tutor?.nome ?? 'Tutor'}`,
         categoria: info.tipo_servico === 'pacote' ? 'Pacote' : 'Avulso',
         valor: info.valor ?? 0,
         status_pagamento: info.pagamento_status,
+        forma_pagamento: info.forma_pagamento,
         agendamento_id: agendamentoId,
       })
+      if (erroLancamento) throw new Error(`Falha ao lançar no financeiro: ${erroLancamento.message}`)
 
       if (info.tipo_servico === 'pacote') {
         const { data: pacote } = await supabase
@@ -95,29 +116,34 @@ export function RegistroProcedimento() {
       }
 
       // Todo banho consome os produtos em uso (shampoo, condicionador etc.) e um laço.
-      const { data: produtosAtivos } = await supabase
-        .from('estoque_produtos')
-        .select('id, banhos_realizados')
-        .neq('status', 'encerrado')
-      for (const p of (produtosAtivos as { id: string; banhos_realizados: number }[] | null) ?? []) {
-        const novoTotal = p.banhos_realizados + 1
-        await supabase
+      // Não é crítico: se falhar, não bloqueia o registro do banho (já salvo acima).
+      try {
+        const { data: produtosAtivos } = await supabase
           .from('estoque_produtos')
-          .update({ banhos_realizados: novoTotal, status: estoqueStatus(novoTotal) })
-          .eq('id', p.id)
-      }
+          .select('id, banhos_realizados')
+          .neq('status', 'encerrado')
+        for (const p of (produtosAtivos as { id: string; banhos_realizados: number }[] | null) ?? []) {
+          const novoTotal = p.banhos_realizados + 1
+          await supabase
+            .from('estoque_produtos')
+            .update({ banhos_realizados: novoTotal, status: estoqueStatus(novoTotal) })
+            .eq('id', p.id)
+        }
 
-      const { data: lote } = await supabase
-        .from('estoque_lacos')
-        .select('id, quantidade_usada')
-        .order('data_registro', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      if (lote) {
-        await supabase
+        const { data: lote } = await supabase
           .from('estoque_lacos')
-          .update({ quantidade_usada: lote.quantidade_usada + 1 })
-          .eq('id', lote.id)
+          .select('id, quantidade_usada')
+          .order('data_registro', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (lote) {
+          await supabase
+            .from('estoque_lacos')
+            .update({ quantidade_usada: lote.quantidade_usada + 1 })
+            .eq('id', lote.id)
+        }
+      } catch (estoqueErr) {
+        console.warn('Não foi possível atualizar o estoque automaticamente:', estoqueErr)
       }
 
       if (enviarWhatsapp) {
@@ -129,8 +155,8 @@ export function RegistroProcedimento() {
       }
 
       navigate('/agenda')
-    } catch {
-      setErro('Não foi possível salvar o registro. Tente novamente.')
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível salvar o registro. Tente novamente.')
     } finally {
       setSalvando(false)
     }
@@ -150,7 +176,7 @@ export function RegistroProcedimento() {
 
       <div>
         <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
-          Fotos do banho ({fotos.length}/3)
+          Fotos do banho ({fotos.length}/3) · mínimo 1
         </div>
         <div className="flex gap-3">
           {[0, 1, 2].map((i) => {
@@ -178,6 +204,11 @@ export function RegistroProcedimento() {
             onChange={(e) => adicionarFotos(e.target.files)}
           />
         </div>
+        {fotos.length === 0 && (
+          <div className="mt-2 text-[11.5px] font-semibold text-terracota-strong">
+            Adicione pelo menos 1 foto para poder salvar.
+          </div>
+        )}
       </div>
 
       <div>
@@ -198,14 +229,14 @@ export function RegistroProcedimento() {
       <div className="flex justify-end gap-2">
         <button
           onClick={() => concluir(false)}
-          disabled={salvando}
+          disabled={salvando || fotos.length === 0}
           className="rounded-pill border border-border px-5 py-[13px] text-[13px] font-bold text-text-soft disabled:opacity-60"
         >
           Salvar
         </button>
         <button
           onClick={() => concluir(true)}
-          disabled={salvando}
+          disabled={salvando || fotos.length === 0}
           className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[22px] py-[13px] text-[13px] font-bold text-white disabled:opacity-60"
         >
           {salvando ? 'Salvando…' : 'Salvar e enviar no WhatsApp'}

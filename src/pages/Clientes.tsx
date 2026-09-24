@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/Card'
+import { Modal } from '../components/ui/Modal'
 
 interface PetLinha {
   id: string
@@ -15,6 +16,8 @@ export function Clientes() {
   const [busca, setBusca] = useState('')
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
+  const [modalAberto, setModalAberto] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
   const navigate = useNavigate()
 
   async function load() {
@@ -37,22 +40,31 @@ export function Clientes() {
       p.tutor?.nome.toLowerCase().includes(busca.toLowerCase())
   )
 
-  async function criarPetRapido(nomePet: string, nomeTutor: string, telefone: string) {
+  async function criarPet(nomePet: string, especie: string, nomeTutor: string, telefone: string) {
     setCriando(true)
-    const { data: tutor } = await supabase
+    setErro(null)
+    const { data: tutor, error: erroTutor } = await supabase
       .from('tutores')
-      .insert({ nome: nomeTutor, telefone })
+      .insert({ nome: nomeTutor, telefone: telefone || null })
       .select('id')
       .single()
-    if (tutor) {
-      const { data: pet } = await supabase
-        .from('pets')
-        .insert({ tutor_id: tutor.id, nome: nomePet })
-        .select('id')
-        .single()
-      if (pet) navigate(`/clientes/${pet.id}`)
+    if (erroTutor || !tutor) {
+      setErro('Não foi possível salvar o tutor.')
+      setCriando(false)
+      return
     }
+    const { data: pet, error: erroPet } = await supabase
+      .from('pets')
+      .insert({ tutor_id: tutor.id, nome: nomePet, especie })
+      .select('id')
+      .single()
     setCriando(false)
+    if (erroPet || !pet) {
+      setErro('Não foi possível salvar o pet.')
+      return
+    }
+    setModalAberto(false)
+    navigate(`/clientes/${pet.id}`)
   }
 
   return (
@@ -68,7 +80,12 @@ export function Clientes() {
           onChange={(e) => setBusca(e.target.value)}
           className="flex-1 rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
         />
-        <NovoPetForm onCreate={criarPetRapido} loading={criando} />
+        <button
+          onClick={() => { setErro(null); setModalAberto(true) }}
+          className="whitespace-nowrap rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[11px] text-[13px] font-bold text-white"
+        >
+          + Novo pet
+        </button>
       </div>
 
       {loading ? (
@@ -93,45 +110,97 @@ export function Clientes() {
           )}
         </div>
       )}
+
+      <Modal open={modalAberto} onClose={() => setModalAberto(false)}>
+        <NovoPetFormulario onCreate={criarPet} loading={criando} erro={erro} onCancel={() => setModalAberto(false)} />
+      </Modal>
     </div>
   )
 }
 
-function NovoPetForm({
+function NovoPetFormulario({
   onCreate,
+  onCancel,
   loading,
+  erro,
 }: {
-  onCreate: (pet: string, tutor: string, telefone: string) => void
+  onCreate: (pet: string, especie: string, tutor: string, telefone: string) => void
+  onCancel: () => void
   loading: boolean
+  erro: string | null
 }) {
-  const [open, setOpen] = useState(false)
   const [pet, setPet] = useState('')
+  const [especie, setEspecie] = useState('cão')
   const [tutor, setTutor] = useState('')
   const [telefone, setTelefone] = useState('')
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="whitespace-nowrap rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[11px] text-[13px] font-bold text-white"
-      >
-        + Novo pet
-      </button>
-    )
-  }
-
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-2">
-      <input placeholder="Nome do pet" value={pet} onChange={(e) => setPet(e.target.value)} className="w-32 rounded-lg border border-border px-2 py-[7px] text-[12px] outline-none" />
-      <input placeholder="Nome do tutor" value={tutor} onChange={(e) => setTutor(e.target.value)} className="w-32 rounded-lg border border-border px-2 py-[7px] text-[12px] outline-none" />
-      <input placeholder="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} className="w-28 rounded-lg border border-border px-2 py-[7px] text-[12px] outline-none" />
-      <button
-        disabled={!pet || !tutor || loading}
-        onClick={() => onCreate(pet, tutor, telefone)}
-        className="rounded-lg bg-gradient-to-br from-blue to-blue-dark px-3 py-[7px] text-[11px] font-bold text-white disabled:opacity-50"
-      >
-        Salvar
-      </button>
-    </div>
+    <>
+      <div className="flex items-center justify-between">
+        <div className="text-[19px] font-extrabold">Cadastrar novo pet</div>
+        <button onClick={onCancel} className="text-text-muted">✕</button>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-3">
+          <div className="flex-[1.4]">
+            <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Nome do pet</div>
+            <input
+              value={pet}
+              onChange={(e) => setPet(e.target.value)}
+              autoFocus
+              className="w-full rounded-xl border border-border px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+            />
+          </div>
+          <div className="flex-1">
+            <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Espécie</div>
+            <select
+              value={especie}
+              onChange={(e) => setEspecie(e.target.value)}
+              className="w-full rounded-xl border border-border px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+            >
+              <option value="cão">Cão</option>
+              <option value="gato">Gato</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Nome do tutor</div>
+          <input
+            value={tutor}
+            onChange={(e) => setTutor(e.target.value)}
+            className="w-full rounded-xl border border-border px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+          />
+        </div>
+        <div>
+          <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Telefone / WhatsApp</div>
+          <input
+            value={telefone}
+            onChange={(e) => setTelefone(e.target.value)}
+            placeholder="(11) 90000-0000"
+            className="w-full rounded-xl border border-border px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
+          />
+        </div>
+      </div>
+
+      {erro && <div className="text-[12.5px] font-semibold text-terracota-strong">{erro}</div>}
+
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={onCancel}
+          className="rounded-pill border border-border px-5 py-[12px] text-[13px] font-bold text-text-soft"
+        >
+          Cancelar
+        </button>
+        <button
+          disabled={!pet || !tutor || loading}
+          onClick={() => onCreate(pet, especie, tutor, telefone)}
+          className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[20px] py-[12px] text-[13px] font-bold text-white disabled:opacity-50"
+        >
+          {loading ? 'Salvando…' : 'Salvar pet'}
+        </button>
+      </div>
+    </>
   )
 }

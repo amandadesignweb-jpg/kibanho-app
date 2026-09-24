@@ -55,6 +55,7 @@ create table agendamentos (
   hora time not null,
   status text not null default 'confirmado' check (status in ('confirmado','realizado','remarcado','nao_realizado','cancelado')),
   pagamento_status text not null default 'pago' check (pagamento_status in ('pago','pendente')),
+  forma_pagamento text check (forma_pagamento in ('pix','credito','debito','dinheiro')),
   valor numeric(10,2),
   created_at timestamptz not null default now()
 );
@@ -78,6 +79,7 @@ create table financeiro_lancamentos (
   valor numeric(10,2) not null,
   data date not null default current_date,
   status_pagamento text not null default 'pago' check (status_pagamento in ('pago','pendente')),
+  forma_pagamento text check (forma_pagamento in ('pix','credito','debito','dinheiro')),
   agendamento_id uuid references agendamentos(id) on delete set null,
   boleto_id uuid,
   created_at timestamptz not null default now()

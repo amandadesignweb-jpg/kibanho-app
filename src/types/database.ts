@@ -49,6 +49,7 @@ export type AgendamentoStatus =
   | 'cancelado'
 
 export type TipoProcedimento = 'banho' | 'banho_tosa' | 'tosa_higienica'
+export type FormaPagamento = 'pix' | 'credito' | 'debito' | 'dinheiro'
 
 export interface Agendamento {
   id: string
@@ -59,6 +60,7 @@ export interface Agendamento {
   hora: string
   status: AgendamentoStatus
   pagamento_status: 'pago' | 'pendente'
+  forma_pagamento: FormaPagamento | null
   valor: number | null
   created_at: string
 }
@@ -82,6 +84,7 @@ export interface FinanceiroLancamento {
   valor: number
   data: string
   status_pagamento: 'pago' | 'pendente'
+  forma_pagamento: FormaPagamento | null
   agendamento_id: string | null
   boleto_id: string | null
   created_at: string

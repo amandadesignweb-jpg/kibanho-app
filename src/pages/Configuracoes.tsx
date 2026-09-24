@@ -17,6 +17,12 @@ export function Configuracoes() {
   const [novoPacoteValor, setNovoPacoteValor] = useState('')
   const [novoPacoteBanhos, setNovoPacoteBanhos] = useState('')
 
+  const [editandoId, setEditandoId] = useState<string | null>(null)
+  const [editNome, setEditNome] = useState('')
+  const [editValor, setEditValor] = useState('')
+  const [editBanhos, setEditBanhos] = useState('')
+  const [erroPacote, setErroPacote] = useState<string | null>(null)
+
   const load = useCallback(async () => {
     setLoading(true)
     const [configRes, tiposRes] = await Promise.all([
@@ -59,6 +65,37 @@ export function Configuracoes() {
     const novoValor = !config[campo]
     updateField(campo, novoValor as ConfiguracoesRow[typeof campo])
     await supabase.from('configuracoes').update({ [campo]: novoValor }).eq('id', 1)
+  }
+
+  function iniciarEdicao(t: TipoPacote) {
+    setEditandoId(t.id)
+    setEditNome(t.nome)
+    setEditValor(String(t.valor))
+    setEditBanhos(String(t.banhos_por_ciclo))
+    setErroPacote(null)
+  }
+
+  async function salvarEdicao() {
+    if (!editandoId) return
+    const valor = Number(editValor.replace(',', '.'))
+    const banhos = Number(editBanhos)
+    if (!editNome || !valor || !banhos) return
+    await supabase
+      .from('tipos_pacote')
+      .update({ nome: editNome, valor, banhos_por_ciclo: banhos })
+      .eq('id', editandoId)
+    setEditandoId(null)
+    load()
+  }
+
+  async function excluirPacote(id: string) {
+    if (!window.confirm('Excluir este tipo de pacote?')) return
+    const { error } = await supabase.from('tipos_pacote').delete().eq('id', id)
+    if (error) {
+      setErroPacote('Não dá pra excluir — esse tipo já tem pacotes vendidos vinculados a ele.')
+      return
+    }
+    load()
   }
 
   async function adicionarPacote() {
@@ -121,20 +158,47 @@ export function Configuracoes() {
 
           <Card className="flex-grow p-[22px]">
             <div className="mb-2 text-[13.5px] font-extrabold">Tipos de pacote</div>
-            {tipos.map((t) => (
-              <div key={t.id} className="flex items-center gap-[14px] border-b border-[#ece5d8] py-3 last:border-none">
-                <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-blue-tint text-[11px] font-extrabold text-blue-dark">
-                  {t.nome.charAt(0).toUpperCase()}
+            {tipos.map((t) =>
+              editandoId === t.id ? (
+                <div key={t.id} className="flex items-center gap-2 border-b border-[#ece5d8] py-3 last:border-none">
+                  <input
+                    value={editNome}
+                    onChange={(e) => setEditNome(e.target.value)}
+                    className="flex-1 rounded-lg border border-border bg-[#fbf9f5] px-[10px] py-[7px] text-[12px] outline-none focus:border-blue"
+                  />
+                  <input
+                    value={editBanhos}
+                    onChange={(e) => setEditBanhos(e.target.value)}
+                    inputMode="numeric"
+                    className="w-[70px] rounded-lg border border-border bg-[#fbf9f5] px-[10px] py-[7px] text-[12px] outline-none focus:border-blue"
+                  />
+                  <input
+                    value={editValor}
+                    onChange={(e) => setEditValor(e.target.value)}
+                    inputMode="decimal"
+                    className="w-[70px] rounded-lg border border-border bg-[#fbf9f5] px-[10px] py-[7px] text-[12px] outline-none focus:border-blue"
+                  />
+                  <button onClick={salvarEdicao} className="text-[11.5px] font-bold text-blue">Salvar</button>
+                  <button onClick={() => setEditandoId(null)} className="text-[11.5px] font-bold text-text-faint">Cancelar</button>
                 </div>
-                <div className="flex-grow">
-                  <div className="text-[12.5px] font-bold">{t.nome}</div>
-                  <div className="text-[11px] text-text-muted">
-                    {t.banhos_por_ciclo} banho{t.banhos_por_ciclo !== 1 ? 's' : ''} por ciclo
+              ) : (
+                <div key={t.id} className="flex items-center gap-[14px] border-b border-[#ece5d8] py-3 last:border-none">
+                  <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-blue-tint text-[11px] font-extrabold text-blue-dark">
+                    {t.nome.charAt(0).toUpperCase()}
                   </div>
+                  <div className="flex-grow">
+                    <div className="text-[12.5px] font-bold">{t.nome}</div>
+                    <div className="text-[11px] text-text-muted">
+                      {t.banhos_por_ciclo} banho{t.banhos_por_ciclo !== 1 ? 's' : ''} por ciclo
+                    </div>
+                  </div>
+                  <div className="text-[13px] font-extrabold">R$ {t.valor.toFixed(0)}</div>
+                  <button onClick={() => iniciarEdicao(t)} className="text-[11px] font-bold text-blue">Editar</button>
+                  <button onClick={() => excluirPacote(t.id)} className="text-[11px] font-bold text-terracota-strong">Excluir</button>
                 </div>
-                <div className="text-[13px] font-extrabold">R$ {t.valor.toFixed(0)}</div>
-              </div>
-            ))}
+              )
+            )}
+            {erroPacote && <div className="mt-2 text-[11.5px] font-semibold text-terracota-strong">{erroPacote}</div>}
 
             <div className="mt-3 flex items-end gap-2">
               <input

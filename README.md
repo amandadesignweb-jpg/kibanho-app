@@ -11,19 +11,22 @@ Storage) no backend. Publicado em https://kibanho.netlify.app
   configurações), com RLS, índices de performance e bucket de fotos.
 - ✅ Login e Dashboard (resumo do dia, cobranças pendentes, boletos vencendo,
   estoque para repor, ações rápidas nos agendamentos).
-- ✅ Agenda (semana + dia), Novo Agendamento (seletor de dia/horário em grade,
-  igual ao wireframe — com horários já ocupados desabilitados automaticamente),
-  Registro de Procedimento (fotos + anotação + envio por WhatsApp).
-- ✅ Clientes & Pets (cadastro rápido) e Ficha do Pet (progresso do pacote,
-  histórico de atendimentos).
+- ✅ Agenda (semana + dia), Novo Agendamento (pet cadastrado ou cadastro de
+  pet novo na mesma tela; Avulso ou Pacote mensal/quinzenal — pacote novo já
+  agenda automaticamente os próximos atendimentos, editáveis um a um antes de
+  confirmar; forma de pagamento pix/crédito/débito/dinheiro ou "cobrar
+  depois"), Registro de Procedimento (fotos — mínimo 1 obrigatório — +
+  anotação + envio por WhatsApp).
+- ✅ Clientes & Pets (cadastro rápido em pop-up centralizado) e Ficha do Pet
+  (progresso do pacote, histórico de atendimentos).
 - ✅ Financeiro completo (entradas/saídas, fluxo de caixa, boletos a pagar com
   data de vencimento editável no "Adiado", exportação em CSV).
 - ✅ Estoque (produtos em uso, laços) com consumo automático a cada banho
   registrado.
 - ✅ Relatórios (banhos, receita, ticket médio, serviços mais realizados —
   Banho / Banho + tosa / Tosa higiênica —, % de clientes com pacote, estoque).
-- ✅ Configurações (dados da empresa, tipos de pacote, notificações, conta e
-  segurança).
+- ✅ Configurações (dados da empresa, tipos de pacote — agora editáveis e
+  excluíveis —, notificações, conta e segurança).
 
 Cada banho registrado em "Registro de Procedimento" dispara, sozinho: o
 lançamento financeiro de entrada, o incremento do pacote (se for cliente de
@@ -32,6 +35,23 @@ lançar nada manualmente depois de um atendimento.
 
 ## Pontos de atenção para a próxima rodada (não bloqueiam o uso)
 
+- **Cadência do pacote automático**: quando cria um pacote mensal ou
+  quinzenal novo em "Novo agendamento", o sistema agenda sozinho os próximos
+  atendimentos a cada 7 dias (mensal) ou 15 dias (quinzenal), a partir da
+  primeira data escolhida, usando a quantidade de banhos configurada em
+  Configurações → Tipos de pacote. É uma interpretação minha de "agendar
+  automaticamente os próximos atendimentos" — as datas/horários geradas
+  ficam editáveis na tela antes de confirmar, mas vale validar com a
+  Janaína se a cadência (semanal/quinzenal) é mesmo essa.
+- **"Erro que impedia salvar o banho"**: não consegui reproduzir o erro nem
+  achar uma causa confirmada nos logs do Supabase. O que fiz foi reforçar o
+  fluxo — agora toda escrita (foto, procedimento, status do agendamento,
+  lançamento financeiro) checa o erro de verdade e mostra uma mensagem
+  específica em vez de falhar quieto, saneei os nomes de arquivo de foto
+  (fotos de celular às vezes vêm com espaço/acento, o que podia rejeitar o
+  upload) e passei a exigir pelo menos 1 foto antes de liberar o Salvar. Se
+  o erro voltar a acontecer, a mensagem que aparecer na tela agora vai dizer
+  exatamente onde falhou — me manda ela que eu já sigo direto pra causa.
 - **Ativar proteção de senha vazada** no Supabase: Authentication → Policies
   → Password Security → ative "Leaked password protection". É um toggle,
   1 minuto, recomendado antes de repassar o acesso pra Janaína.
