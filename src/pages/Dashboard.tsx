@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/Card'
 import { Chip, TagPill, StatusPill } from '../components/ui/Pill'
+import { ReagendarModal } from '../components/ui/ReagendarModal'
+import { JustificarModal } from '../components/ui/JustificarModal'
 import { formatMoney, todayISO, vencimentoLabel } from '../lib/date'
 import { boletoEstado, isLembreteDashboard, ESTADO_LABEL, pagarBoleto, adiarBoleto } from '../lib/boletos'
 import type { AgendamentoStatus, Boleto } from '../types/database'
@@ -69,15 +71,19 @@ export function Dashboard() {
     load()
   }, [load])
 
-  async function marcarAgendamento(id: string, status: AgendamentoStatus) {
-    await supabase.from('agendamentos').update({ status }).eq('id', id)
-    load()
-  }
+  const [remarcando, setRemarcando] = useState<{ id: string; nome: string } | null>(null)
+  const [justificando, setJustificando] = useState<{ id: string; nome: string } | null>(null)
 
   async function pagar(id: string) {
     const boleto = boletos.find((b) => b.id === id)
     if (!boleto) return
     await pagarBoleto(boleto)
+    load()
+  }
+
+  async function marcarCobrancaPaga(agendamentoId: string) {
+    await supabase.from('agendamentos').update({ pagamento_status: 'pago' }).eq('id', agendamentoId)
+    await supabase.from('financeiro_lancamentos').update({ status_pagamento: 'pago' }).eq('agendamento_id', agendamentoId)
     load()
   }
 
@@ -181,8 +187,16 @@ export function Dashboard() {
                       {a.pet?.nome} · {a.pet?.tutor?.nome ?? '—'}
                     </div>
                   </div>
-                  <div className="text-[13px] font-extrabold text-terracota-dark">
-                    {formatMoney(a.valor ?? 0)}
+                  <div className="flex items-center gap-2">
+                    <div className="text-[13px] font-extrabold text-terracota-dark">
+                      {formatMoney(a.valor ?? 0)}
+                    </div>
+                    <button
+                      onClick={() => marcarCobrancaPaga(a.id)}
+                      className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[10px] py-1 text-[9.5px] font-extrabold text-white"
+                    >
+                      Pago
+                    </button>
                   </div>
                 </div>
               ))}
@@ -321,13 +335,13 @@ export function Dashboard() {
                     </Link>
                     <StatusPill
                       active={a.status === 'remarcado'}
-                      onClick={() => marcarAgendamento(a.id, 'remarcado')}
+                      onClick={() => setRemarcando({ id: a.id, nome: a.pet?.nome ?? 'Pet' })}
                     >
                       Remarcado
                     </StatusPill>
                     <StatusPill
                       active={a.status === 'nao_realizado'}
-                      onClick={() => marcarAgendamento(a.id, 'nao_realizado')}
+                      onClick={() => setJustificando({ id: a.id, nome: a.pet?.nome ?? 'Pet' })}
                     >
                       Não realizado
                     </StatusPill>
@@ -338,6 +352,21 @@ export function Dashboard() {
           </div>
         </>
       )}
+
+      <ReagendarModal
+        open={!!remarcando}
+        agendamentoId={remarcando?.id ?? null}
+        nomePet={remarcando?.nome ?? ''}
+        onClose={() => setRemarcando(null)}
+        onSaved={() => { setRemarcando(null); load() }}
+      />
+      <JustificarModal
+        open={!!justificando}
+        agendamentoId={justificando?.id ?? null}
+        nomePet={justificando?.nome ?? ''}
+        onClose={() => setJustificando(null)}
+        onSaved={() => { setJustificando(null); load() }}
+      />
     </div>
   )
 }

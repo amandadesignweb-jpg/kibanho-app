@@ -62,6 +62,7 @@ export interface Agendamento {
   pagamento_status: 'pago' | 'pendente'
   forma_pagamento: FormaPagamento | null
   valor: number | null
+  justificativa_ausencia: string | null
   created_at: string
 }
 

@@ -317,343 +317,356 @@ export function NovoAgendamento() {
   )
 
   return (
-    <div className="mx-auto flex max-w-[640px] flex-col gap-5">
-      <div className="text-[20px] font-extrabold">Novo agendamento</div>
+    <div className="mx-auto flex h-[calc(100vh-48px)] max-w-[1040px] flex-col gap-3">
+      <div className="flex shrink-0 items-center justify-between">
+        <div className="text-[18px] font-extrabold">Novo agendamento</div>
+        <button onClick={() => navigate(-1)} className="text-text-muted">✕</button>
+      </div>
 
-      <div>
-        <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Pet</div>
-        <div className="mb-3 flex gap-2">
-          <button
-            onClick={() => setModoPet('existente')}
-            className={clsx(
-              'rounded-pill border px-4 py-2 text-[12.5px] font-bold',
-              modoPet === 'existente' ? 'border-ink bg-ink text-[#fdfbf8]' : 'border-border text-text-soft'
-            )}
-          >
-            Pet cadastrado
-          </button>
-          <button
-            onClick={() => setModoPet('novo')}
-            className={clsx(
-              'rounded-pill border px-4 py-2 text-[12.5px] font-bold',
-              modoPet === 'novo' ? 'border-ink bg-ink text-[#fdfbf8]' : 'border-border text-text-soft'
-            )}
-          >
-            Cadastrar novo pet
-          </button>
-        </div>
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-5">
+        {/* Coluna esquerda: pet, serviço, procedimento */}
+        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
+          <div>
+            <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Pet</div>
+            <div className="mb-2 flex gap-2">
+              <button
+                onClick={() => setModoPet('existente')}
+                className={clsx(
+                  'rounded-pill border px-3 py-[6px] text-[12px] font-bold',
+                  modoPet === 'existente' ? 'border-ink bg-ink text-[#fdfbf8]' : 'border-border text-text-soft'
+                )}
+              >
+                Pet cadastrado
+              </button>
+              <button
+                onClick={() => setModoPet('novo')}
+                className={clsx(
+                  'rounded-pill border px-3 py-[6px] text-[12px] font-bold',
+                  modoPet === 'novo' ? 'border-ink bg-ink text-[#fdfbf8]' : 'border-border text-text-soft'
+                )}
+              >
+                Cadastrar novo pet
+              </button>
+            </div>
 
-        {modoPet === 'existente' ? (
-          <>
-            <input
-              placeholder="Buscar pet ou tutor…"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="mb-2 w-full rounded-xl border border-border px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
-            />
-            <div className="flex flex-wrap gap-2">
-              {petsFiltrados.map((p) => (
+            {modoPet === 'existente' ? (
+              <>
+                <input
+                  placeholder="Buscar pet ou tutor…"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  className="mb-2 w-full rounded-xl border border-border px-3 py-[8px] text-[12.5px] outline-none focus:border-blue"
+                />
+                <div className="flex flex-wrap gap-[6px]">
+                  {petsFiltrados.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setPetId(p.id)}
+                      className={clsx(
+                        'flex flex-col items-center gap-1 rounded-2xl border-[1.5px] px-3 py-2',
+                        petId === p.id ? 'border-blue bg-blue-tint' : 'border-border-soft'
+                      )}
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-tint text-[8px] font-bold text-blue">
+                        IMG
+                      </div>
+                      <div className="text-[11.5px] font-bold">{p.nome}</div>
+                    </button>
+                  ))}
+                  {petsFiltrados.length === 0 && (
+                    <div className="text-[12px] text-text-muted">Nenhum pet encontrado.</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2 rounded-2xl bg-[#f7f4ee] p-3">
+                <div className="flex gap-2">
+                  <div className="flex-[1.4]">
+                    <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Nome do pet</div>
+                    <input
+                      value={novoPetNome}
+                      onChange={(e) => setNovoPetNome(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-card px-3 py-[8px] text-[12.5px] outline-none focus:border-blue"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Espécie</div>
+                    <select
+                      value={novoPetEspecie}
+                      onChange={(e) => setNovoPetEspecie(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-card px-3 py-[8px] text-[12.5px] outline-none focus:border-blue"
+                    >
+                      <option value="cão">Cão</option>
+                      <option value="gato">Gato</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Nome do tutor</div>
+                    <input
+                      value={novoTutorNome}
+                      onChange={(e) => setNovoTutorNome(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-card px-3 py-[8px] text-[12.5px] outline-none focus:border-blue"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Telefone</div>
+                    <input
+                      value={novoTutorTelefone}
+                      onChange={(e) => setNovoTutorTelefone(e.target.value)}
+                      placeholder="(11) 90000-0000"
+                      className="w-full rounded-xl border border-border bg-card px-3 py-[8px] text-[12.5px] outline-none focus:border-blue"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Serviço</div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setTipoServico('avulso')}
+                className={clsx(
+                  'flex-1 rounded-2xl border-[1.5px] py-[8px] text-center text-[12px] font-bold',
+                  tipoServico === 'avulso'
+                    ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                    : 'border-border-soft text-text-soft'
+                )}
+              >
+                Avulso {avulso ? `(R$ ${avulso.valor.toFixed(0)})` : ''}
+              </button>
+              {pacoteAtivoId ? (
                 <button
-                  key={p.id}
-                  onClick={() => setPetId(p.id)}
+                  onClick={() => setTipoServico('pacote_ativo')}
                   className={clsx(
-                    'flex flex-col items-center gap-1 rounded-2xl border-[1.5px] px-4 py-[10px]',
-                    petId === p.id ? 'border-blue bg-blue-tint' : 'border-border-soft'
+                    'flex-1 rounded-2xl border-[1.5px] py-[8px] text-center text-[12px] font-bold',
+                    tipoServico === 'pacote_ativo'
+                      ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                      : 'border-border-soft text-text-soft'
                   )}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-tint text-[9px] font-bold text-blue">
-                    IMG
-                  </div>
-                  <div className="text-[12px] font-bold">{p.nome}</div>
+                  Usar pacote ativo
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setTipoServico('pacote_mensal')}
+                    className={clsx(
+                      'flex-1 rounded-2xl border-[1.5px] py-[8px] text-center text-[12px] font-bold',
+                      tipoServico === 'pacote_mensal'
+                        ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                        : 'border-border-soft text-text-soft'
+                    )}
+                  >
+                    Pacote mensal
+                  </button>
+                  <button
+                    onClick={() => setTipoServico('pacote_quinzenal')}
+                    className={clsx(
+                      'flex-1 rounded-2xl border-[1.5px] py-[8px] text-center text-[12px] font-bold',
+                      tipoServico === 'pacote_quinzenal'
+                        ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                        : 'border-border-soft text-text-soft'
+                    )}
+                  >
+                    Pacote quinzenal
+                  </button>
+                </>
+              )}
+            </div>
+            {ehPacoteNovo && (
+              <div className="mt-1 text-[11px] text-text-muted">
+                Cria o pacote, agenda automaticamente os próximos atendimentos e cobra o pacote inteiro agora.
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Procedimento</div>
+            <div className="flex gap-2">
+              {TIPO_PROCEDIMENTO_OPCOES.map((op) => (
+                <button
+                  key={op}
+                  onClick={() => setTipoProcedimento(op)}
+                  className={clsx(
+                    'flex-1 rounded-2xl border-[1.5px] py-[8px] text-center text-[12px] font-bold',
+                    tipoProcedimento === op
+                      ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                      : 'border-border-soft text-text-soft'
+                  )}
+                >
+                  {TIPO_PROCEDIMENTO_LABEL[op]}
                 </button>
               ))}
-              {petsFiltrados.length === 0 && (
-                <div className="text-[12.5px] text-text-muted">Nenhum pet encontrado.</div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col gap-3 rounded-2xl bg-[#f7f4ee] p-4">
-            <div className="flex gap-3">
-              <div className="flex-[1.4]">
-                <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Nome do pet</div>
-                <input
-                  value={novoPetNome}
-                  onChange={(e) => setNovoPetNome(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
-                />
-              </div>
-              <div className="flex-1">
-                <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Espécie</div>
-                <select
-                  value={novoPetEspecie}
-                  onChange={(e) => setNovoPetEspecie(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
-                >
-                  <option value="cão">Cão</option>
-                  <option value="gato">Gato</option>
-                  <option value="outro">Outro</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Nome do tutor</div>
-                <input
-                  value={novoTutorNome}
-                  onChange={(e) => setNovoTutorNome(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
-                />
-              </div>
-              <div className="flex-1">
-                <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Telefone</div>
-                <input
-                  value={novoTutorTelefone}
-                  onChange={(e) => setNovoTutorTelefone(e.target.value)}
-                  placeholder="(11) 90000-0000"
-                  className="w-full rounded-xl border border-border bg-card px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
-                />
-              </div>
             </div>
           </div>
-        )}
-      </div>
 
-      <div>
-        <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Serviço</div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setTipoServico('avulso')}
-            className={clsx(
-              'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold',
-              tipoServico === 'avulso'
-                ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
-                : 'border-border-soft text-text-soft'
-            )}
-          >
-            Avulso {avulso ? `(R$ ${avulso.valor.toFixed(0)})` : ''}
-          </button>
-          {pacoteAtivoId ? (
-            <button
-              onClick={() => setTipoServico('pacote_ativo')}
-              className={clsx(
-                'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold',
-                tipoServico === 'pacote_ativo'
-                  ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
-                  : 'border-border-soft text-text-soft'
-              )}
-            >
-              Usar pacote ativo
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={() => setTipoServico('pacote_mensal')}
-                className={clsx(
-                  'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold',
-                  tipoServico === 'pacote_mensal'
-                    ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
-                    : 'border-border-soft text-text-soft'
-                )}
-              >
-                Pacote mensal
-              </button>
-              <button
-                onClick={() => setTipoServico('pacote_quinzenal')}
-                className={clsx(
-                  'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold',
-                  tipoServico === 'pacote_quinzenal'
-                    ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
-                    : 'border-border-soft text-text-soft'
-                )}
-              >
-                Pacote quinzenal
-              </button>
-            </>
+          {exigePagamentoAgora && (
+            <div>
+              <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">
+                Pagamento {ehPacoteNovo ? '(pacote inteiro)' : ''}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {FORMA_PAGAMENTO_OPCOES.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => { setFormaPagamento(f); setCobrarDepois(false) }}
+                    disabled={cobrarDepois}
+                    className={clsx(
+                      'flex-1 rounded-2xl border-[1.5px] py-[7px] text-center text-[12px] font-bold disabled:opacity-40',
+                      formaPagamento === f && !cobrarDepois
+                        ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                        : 'border-border-soft text-text-soft'
+                    )}
+                  >
+                    {FORMA_PAGAMENTO_LABEL[f]}
+                  </button>
+                ))}
+              </div>
+              <label className="mt-1 flex items-center gap-[8px] text-[12px] font-semibold text-text-soft">
+                <input
+                  type="checkbox"
+                  checked={cobrarDepois}
+                  onChange={(e) => { setCobrarDepois(e.target.checked); if (e.target.checked) setFormaPagamento(null) }}
+                />
+                Cobrar depois (pagamento pendente)
+              </label>
+            </div>
           )}
         </div>
-        {ehPacoteNovo && (
-          <div className="mt-2 text-[11.5px] text-text-muted">
-            Cria o pacote, agenda automaticamente os próximos atendimentos e cobra o pacote inteiro agora.
+
+        {/* Coluna direita: data/horário e sessões do pacote */}
+        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
+          <div>
+            <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">
+              {ehPacoteNovo ? 'Data e horário do 1º atendimento' : 'Data e horário'}
+            </div>
+            <div className="mb-2 flex gap-[5px]">
+              {dias.map((d) => {
+                const iso = toISO(d)
+                const isSelected = iso === data
+                return (
+                  <button
+                    key={iso}
+                    onClick={() => setData(iso)}
+                    className={clsx(
+                      'flex-1 rounded-xl py-[7px] text-center',
+                      isSelected ? 'bg-gradient-to-br from-blue to-blue-dark text-white' : 'bg-[#f7f4ee]'
+                    )}
+                  >
+                    <div className={clsx('text-[8.5px] font-bold', isSelected ? 'text-white/75' : 'text-text-faint')}>
+                      {DIAS_SEMANA[d.getDay()]}
+                    </div>
+                    <div className="mt-[1px] text-[12px] font-extrabold">{d.getDate()}</div>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="grid grid-cols-5 gap-[6px]">
+              {HORARIOS.map((h) => {
+                const ocupado = horariosOcupados.includes(h)
+                const isSelected = h === hora
+                return (
+                  <button
+                    key={h}
+                    disabled={ocupado}
+                    onClick={() => setHora(h)}
+                    className={clsx(
+                      'rounded-[10px] border-[1.5px] py-[7px] text-center text-[11.5px] font-bold',
+                      ocupado
+                        ? 'cursor-not-allowed border-dashed border-border-soft text-text-faint'
+                        : isSelected
+                          ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                          : 'border-border-soft text-ink hover:border-blue'
+                    )}
+                  >
+                    {h}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {ehPacoteNovo && sessoes.length > 0 && (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">
+                Próximos atendimentos ({sessoes.length})
+              </div>
+              <div className="flex flex-col gap-[6px] overflow-y-auto">
+                {sessoes.map((s, i) => {
+                  const ocupado = i > 0 && (ocupadosPorData[s.data] ?? []).includes(s.hora)
+                  return (
+                    <div key={i} className="flex items-center gap-2 rounded-xl bg-[#f7f4ee] px-2 py-[6px]">
+                      <div className="w-4 text-center text-[10.5px] font-extrabold text-text-faint">{i + 1}</div>
+                      <input
+                        type="date"
+                        value={s.data}
+                        onChange={(e) => atualizarSessao(i, 'data', e.target.value)}
+                        className="rounded-lg border border-border bg-card px-[6px] py-[4px] text-[11px] outline-none focus:border-blue"
+                      />
+                      <input
+                        type="time"
+                        value={s.hora}
+                        onChange={(e) => atualizarSessao(i, 'hora', e.target.value)}
+                        className="rounded-lg border border-border bg-card px-[6px] py-[4px] text-[11px] outline-none focus:border-blue"
+                      />
+                      {ocupado && (
+                        <span className="text-[10px] font-bold text-terracota-strong">Ocupado</span>
+                      )}
+                      <button
+                        onClick={() => removerSessao(i)}
+                        className="ml-auto text-[10.5px] font-bold text-text-faint hover:text-terracota-strong"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="shrink-0">
+        {nomePetConfirmacao && hora && (
+          <div className="mb-2 flex items-center gap-[10px] rounded-2xl bg-[#f7f4ee] px-4 py-2">
+            <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[9px] bg-blue-tint text-blue-dark">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="5" width="18" height="16" rx="3" />
+                <path d="M3 10h18" />
+              </svg>
+            </div>
+            <div className="text-[12px]">
+              <b>{nomePetConfirmacao}</b> ·{' '}
+              {tipoServico === 'avulso' ? 'Avulso' : tipoServico === 'pacote_ativo' ? 'Pacote ativo' : tipoServico === 'pacote_mensal' ? 'Pacote mensal (novo)' : 'Pacote quinzenal (novo)'}
+              {' '}· {DIAS_SEMANA[new Date(data + 'T00:00:00').getDay()]}, {formatBR(data)} às <b>{hora}</b>
+              {ehPacoteNovo && sessoes.length > 0 && ` · +${sessoes.length - 1} atendimento${sessoes.length - 1 !== 1 ? 's' : ''} agendados`}
+            </div>
           </div>
         )}
-      </div>
 
-      <div>
-        <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Procedimento</div>
-        <div className="flex gap-2">
-          {TIPO_PROCEDIMENTO_OPCOES.map((op) => (
-            <button
-              key={op}
-              onClick={() => setTipoProcedimento(op)}
-              className={clsx(
-                'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold',
-                tipoProcedimento === op
-                  ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
-                  : 'border-border-soft text-text-soft'
-              )}
-            >
-              {TIPO_PROCEDIMENTO_LABEL[op]}
-            </button>
-          ))}
-        </div>
-      </div>
+        {erro && <div className="mb-2 text-[12px] font-semibold text-terracota-strong">{erro}</div>}
 
-      <div>
-        <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
-          {ehPacoteNovo ? 'Data e horário do primeiro atendimento' : 'Data e horário'}
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="rounded-pill border border-border px-5 py-[11px] text-[13px] font-bold text-text-soft"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={salvar}
+            disabled={salvando}
+            className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[22px] py-[11px] text-[13px] font-bold text-white disabled:opacity-60"
+          >
+            {salvando ? 'Salvando…' : 'Confirmar agendamento'}
+          </button>
         </div>
-        <div className="mb-3 flex gap-[6px]">
-          {dias.map((d) => {
-            const iso = toISO(d)
-            const isSelected = iso === data
-            return (
-              <button
-                key={iso}
-                onClick={() => setData(iso)}
-                className={clsx(
-                  'flex-1 rounded-xl py-[9px] text-center',
-                  isSelected ? 'bg-gradient-to-br from-blue to-blue-dark text-white' : 'bg-[#f7f4ee]'
-                )}
-              >
-                <div className={clsx('text-[9px] font-bold', isSelected ? 'text-white/75' : 'text-text-faint')}>
-                  {DIAS_SEMANA[d.getDay()]}
-                </div>
-                <div className="mt-[2px] text-[13px] font-extrabold">{d.getDate()}</div>
-              </button>
-            )
-          })}
-        </div>
-        <div className="grid grid-cols-5 gap-2">
-          {HORARIOS.map((h) => {
-            const ocupado = horariosOcupados.includes(h)
-            const isSelected = h === hora
-            return (
-              <button
-                key={h}
-                disabled={ocupado}
-                onClick={() => setHora(h)}
-                className={clsx(
-                  'rounded-[11px] border-[1.5px] py-[9px] text-center text-[12px] font-bold',
-                  ocupado
-                    ? 'cursor-not-allowed border-dashed border-border-soft text-text-faint'
-                    : isSelected
-                      ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
-                      : 'border-border-soft text-ink hover:border-blue'
-                )}
-              >
-                {h}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {ehPacoteNovo && sessoes.length > 0 && (
-        <div>
-          <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
-            Próximos atendimentos do pacote ({sessoes.length})
-          </div>
-          <div className="flex flex-col gap-2">
-            {sessoes.map((s, i) => {
-              const ocupado = i > 0 && (ocupadosPorData[s.data] ?? []).includes(s.hora)
-              return (
-                <div key={i} className="flex items-center gap-2 rounded-xl bg-[#f7f4ee] px-3 py-[9px]">
-                  <div className="w-5 text-center text-[11px] font-extrabold text-text-faint">{i + 1}</div>
-                  <input
-                    type="date"
-                    value={s.data}
-                    onChange={(e) => atualizarSessao(i, 'data', e.target.value)}
-                    className="rounded-lg border border-border bg-card px-2 py-[6px] text-[11.5px] outline-none focus:border-blue"
-                  />
-                  <input
-                    type="time"
-                    value={s.hora}
-                    onChange={(e) => atualizarSessao(i, 'hora', e.target.value)}
-                    className="rounded-lg border border-border bg-card px-2 py-[6px] text-[11.5px] outline-none focus:border-blue"
-                  />
-                  {ocupado && (
-                    <span className="text-[10.5px] font-bold text-terracota-strong">Horário já ocupado</span>
-                  )}
-                  <button
-                    onClick={() => removerSessao(i)}
-                    className="ml-auto text-[11px] font-bold text-text-faint hover:text-terracota-strong"
-                  >
-                    Remover
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {exigePagamentoAgora && (
-        <div>
-          <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
-            Pagamento {ehPacoteNovo ? '(pacote inteiro)' : ''}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {FORMA_PAGAMENTO_OPCOES.map((f) => (
-              <button
-                key={f}
-                onClick={() => { setFormaPagamento(f); setCobrarDepois(false) }}
-                disabled={cobrarDepois}
-                className={clsx(
-                  'flex-1 rounded-2xl border-[1.5px] py-[10px] text-center text-[12.5px] font-bold disabled:opacity-40',
-                  formaPagamento === f && !cobrarDepois
-                    ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
-                    : 'border-border-soft text-text-soft'
-                )}
-              >
-                {FORMA_PAGAMENTO_LABEL[f]}
-              </button>
-            ))}
-          </div>
-          <label className="mt-2 flex items-center gap-[8px] text-[12.5px] font-semibold text-text-soft">
-            <input
-              type="checkbox"
-              checked={cobrarDepois}
-              onChange={(e) => { setCobrarDepois(e.target.checked); if (e.target.checked) setFormaPagamento(null) }}
-            />
-            Cobrar depois (pagamento pendente)
-          </label>
-        </div>
-      )}
-
-      {nomePetConfirmacao && hora && (
-        <div className="flex items-center gap-[10px] rounded-2xl bg-[#f7f4ee] px-4 py-3">
-          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] bg-blue-tint text-blue-dark">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="5" width="18" height="16" rx="3" />
-              <path d="M3 10h18" />
-            </svg>
-          </div>
-          <div className="text-[12.5px]">
-            <b>{nomePetConfirmacao}</b> ·{' '}
-            {tipoServico === 'avulso' ? 'Avulso' : tipoServico === 'pacote_ativo' ? 'Pacote ativo' : tipoServico === 'pacote_mensal' ? 'Pacote mensal (novo)' : 'Pacote quinzenal (novo)'}
-            {' '}· {DIAS_SEMANA[new Date(data + 'T00:00:00').getDay()]}, {formatBR(data)} às <b>{hora}</b>
-            {ehPacoteNovo && sessoes.length > 0 && ` · +${sessoes.length - 1} atendimento${sessoes.length - 1 !== 1 ? 's' : ''} agendados`}
-          </div>
-        </div>
-      )}
-
-      {erro && <div className="text-[12.5px] font-semibold text-terracota-strong">{erro}</div>}
-
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={() => navigate(-1)}
-          className="rounded-pill border border-border px-5 py-[13px] text-[13px] font-bold text-text-soft"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={salvar}
-          disabled={salvando}
-          className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[22px] py-[13px] text-[13px] font-bold text-white disabled:opacity-60"
-        >
-          {salvando ? 'Salvando…' : 'Confirmar agendamento'}
-        </button>
       </div>
     </div>
   )

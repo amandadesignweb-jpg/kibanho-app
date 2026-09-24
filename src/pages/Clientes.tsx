@@ -8,7 +8,15 @@ interface PetLinha {
   id: string
   nome: string
   especie: string
+  foto_url: string | null
   tutor: { nome: string; telefone: string | null } | null
+}
+
+function nomeArquivoSeguro(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-zA-Z0-9.\-]/g, '_')
 }
 
 export function Clientes() {
@@ -24,7 +32,7 @@ export function Clientes() {
     setLoading(true)
     const { data } = await supabase
       .from('pets')
-      .select('id, nome, especie, tutor:tutores(nome, telefone)')
+      .select('id, nome, especie, foto_url, tutor:tutores(nome, telefone)')
       .order('nome', { ascending: true })
     setPets((data as unknown as PetLinha[]) ?? [])
     setLoading(false)
@@ -40,7 +48,7 @@ export function Clientes() {
       p.tutor?.nome.toLowerCase().includes(busca.toLowerCase())
   )
 
-  async function criarPet(nomePet: string, especie: string, nomeTutor: string, telefone: string) {
+  async function criarPet(nomePet: string, especie: string, nomeTutor: string, telefone: string, foto: File | null) {
     setCriando(true)
     setErro(null)
     const { data: tutor, error: erroTutor } = await supabase
@@ -58,11 +66,23 @@ export function Clientes() {
       .insert({ tutor_id: tutor.id, nome: nomePet, especie })
       .select('id')
       .single()
-    setCriando(false)
     if (erroPet || !pet) {
+      setCriando(false)
       setErro('Não foi possível salvar o pet.')
       return
     }
+
+    // Foto é opcional — se falhar o upload, o pet já foi salvo e não bloqueia o cadastro.
+    if (foto) {
+      const path = `pets/${pet.id}-${Date.now()}-${nomeArquivoSeguro(foto.name)}`
+      const { error: erroUpload } = await supabase.storage.from('fotos-kibanho').upload(path, foto)
+      if (!erroUpload) {
+        const { data: pub } = supabase.storage.from('fotos-kibanho').getPublicUrl(path)
+        await supabase.from('pets').update({ foto_url: pub.publicUrl }).eq('id', pet.id)
+      }
+    }
+
+    setCriando(false)
     setModalAberto(false)
     navigate(`/clientes/${pet.id}`)
   }
@@ -95,9 +115,13 @@ export function Clientes() {
           {filtrados.map((p) => (
             <Link key={p.id} to={`/clientes/${p.id}`}>
               <Card className="flex items-center gap-3 p-4 hover:shadow-lg">
-                <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-blue-tint text-[9px] font-bold text-blue">
-                  IMG
-                </div>
+                {p.foto_url ? (
+                  <img src={p.foto_url} alt={p.nome} className="h-[42px] w-[42px] shrink-0 rounded-full object-cover" />
+                ) : (
+                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-blue-tint text-[9px] font-bold text-blue">
+                    IMG
+                  </div>
+                )}
                 <div>
                   <div className="text-[13.5px] font-bold">{p.nome}</div>
                   <div className="text-[11.5px] text-text-muted">{p.tutor?.nome ?? '—'}</div>
@@ -124,7 +148,7 @@ function NovoPetFormulario({
   loading,
   erro,
 }: {
-  onCreate: (pet: string, especie: string, tutor: string, telefone: string) => void
+  onCreate: (pet: string, especie: string, tutor: string, telefone: string, foto: File | null) => void
   onCancel: () => void
   loading: boolean
   erro: string | null
@@ -133,6 +157,7 @@ function NovoPetFormulario({
   const [especie, setEspecie] = useState('cão')
   const [tutor, setTutor] = useState('')
   const [telefone, setTelefone] = useState('')
+  const [foto, setFoto] = useState<File | null>(null)
 
   return (
     <>
@@ -142,6 +167,17 @@ function NovoPetFormulario({
       </div>
 
       <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <label className="flex h-[58px] w-[58px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-[1.5px] border-dashed border-blue bg-blue-tint text-[9px] font-bold text-blue">
+            {foto ? (
+              <img src={URL.createObjectURL(foto)} alt="" className="h-full w-full object-cover" />
+            ) : (
+              '+ Foto'
+            )}
+            <input type="file" accept="image/*" hidden onChange={(e) => setFoto(e.target.files?.[0] ?? null)} />
+          </label>
+          <div className="text-[11.5px] text-text-muted">Foto do pet (opcional)</div>
+        </div>
         <div className="flex gap-3">
           <div className="flex-[1.4]">
             <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Nome do pet</div>
@@ -195,7 +231,7 @@ function NovoPetFormulario({
         </button>
         <button
           disabled={!pet || !tutor || loading}
-          onClick={() => onCreate(pet, especie, tutor, telefone)}
+          onClick={() => onCreate(pet, especie, tutor, telefone, foto)}
           className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[20px] py-[12px] text-[13px] font-bold text-white disabled:opacity-50"
         >
           {loading ? 'Salvando…' : 'Salvar pet'}

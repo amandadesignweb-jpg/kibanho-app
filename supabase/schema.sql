@@ -57,6 +57,7 @@ create table agendamentos (
   pagamento_status text not null default 'pago' check (pagamento_status in ('pago','pendente')),
   forma_pagamento text check (forma_pagamento in ('pix','credito','debito','dinheiro')),
   valor numeric(10,2),
+  justificativa_ausencia text,
   created_at timestamptz not null default now()
 );
 

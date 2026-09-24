@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/Card'
 import { Chip, TagPill, StatusPill } from '../components/ui/Pill'
+import { ReagendarModal } from '../components/ui/ReagendarModal'
+import { JustificarModal } from '../components/ui/JustificarModal'
 import clsx from '../lib/clsx'
 import type { AgendamentoStatus } from '../types/database'
 
@@ -79,10 +81,8 @@ export function Agenda() {
     loadSemana(semana)
   }, [semana, loadSemana])
 
-  async function marcar(id: string, status: AgendamentoStatus) {
-    await supabase.from('agendamentos').update({ status }).eq('id', id)
-    loadDia(selected)
-  }
+  const [remarcando, setRemarcando] = useState<{ id: string; nome: string } | null>(null)
+  const [justificando, setJustificando] = useState<{ id: string; nome: string } | null>(null)
 
   const hojeISO = toISO(new Date())
 
@@ -189,10 +189,10 @@ export function Agenda() {
                   >
                     Realizado
                   </Link>
-                  <StatusPill active={a.status === 'remarcado'} onClick={() => marcar(a.id, 'remarcado')}>
+                  <StatusPill active={a.status === 'remarcado'} onClick={() => setRemarcando({ id: a.id, nome: a.pet?.nome ?? 'Pet' })}>
                     Remarcado
                   </StatusPill>
-                  <StatusPill active={a.status === 'nao_realizado'} onClick={() => marcar(a.id, 'nao_realizado')}>
+                  <StatusPill active={a.status === 'nao_realizado'} onClick={() => setJustificando({ id: a.id, nome: a.pet?.nome ?? 'Pet' })}>
                     Não realizado
                   </StatusPill>
                 </div>
@@ -201,6 +201,21 @@ export function Agenda() {
           ))}
         </div>
       )}
+
+      <ReagendarModal
+        open={!!remarcando}
+        agendamentoId={remarcando?.id ?? null}
+        nomePet={remarcando?.nome ?? ''}
+        onClose={() => setRemarcando(null)}
+        onSaved={() => { setRemarcando(null); loadDia(selected); loadSemana(semana) }}
+      />
+      <JustificarModal
+        open={!!justificando}
+        agendamentoId={justificando?.id ?? null}
+        nomePet={justificando?.nome ?? ''}
+        onClose={() => setJustificando(null)}
+        onSaved={() => { setJustificando(null); loadDia(selected) }}
+      />
     </div>
   )
 }

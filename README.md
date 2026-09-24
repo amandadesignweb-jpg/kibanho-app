@@ -9,16 +9,23 @@ Storage) no backend. Publicado em https://kibanho.netlify.app
 - ✅ Infra: banco Supabase criado e schema completo aplicado (tutores, pets,
   pacotes, agendamentos, procedimentos, financeiro, boletos, estoque,
   configurações), com RLS, índices de performance e bucket de fotos.
-- ✅ Login e Dashboard (resumo do dia, cobranças pendentes, boletos vencendo,
-  estoque para repor, ações rápidas nos agendamentos).
-- ✅ Agenda (semana + dia), Novo Agendamento (pet cadastrado ou cadastro de
-  pet novo na mesma tela; Avulso ou Pacote mensal/quinzenal — pacote novo já
-  agenda automaticamente os próximos atendimentos, editáveis um a um antes de
-  confirmar; forma de pagamento pix/crédito/débito/dinheiro ou "cobrar
-  depois"), Registro de Procedimento (fotos — mínimo 1 obrigatório — +
-  anotação + envio por WhatsApp).
-- ✅ Clientes & Pets (cadastro rápido em pop-up centralizado) e Ficha do Pet
-  (progresso do pacote, histórico de atendimentos).
+- ✅ Login e Dashboard (resumo do dia, cobranças pendentes com botão "Pago",
+  boletos vencendo, estoque para repor, ações rápidas nos agendamentos).
+- ✅ Agenda (semana + dia), Novo Agendamento em tela única sem rolagem (pet
+  cadastrado ou cadastro de pet novo na mesma tela; Avulso ou Pacote
+  mensal/quinzenal — pacote novo já agenda automaticamente os próximos
+  atendimentos, editáveis um a um antes de confirmar; forma de pagamento
+  pix/crédito/débito/dinheiro ou "cobrar depois"). Remarcar um agendamento
+  abre os próximos dias e horários livres para escolher o novo horário; "Não
+  realizado" pede uma justificativa opcional da ausência. Registro de
+  Procedimento (fotos — mínimo 1 obrigatório — + anotação + envio por
+  WhatsApp).
+- ✅ Clientes & Pets (cadastro rápido em pop-up centralizado, com foto do pet
+  opcional) e Ficha do Pet (foto, progresso do pacote, próximos banhos
+  agendados, histórico de pagamento e histórico de atendimentos expansível —
+  clique em cada atendimento pra ver fotos e anotação completas).
+- ✅ Menu lateral retrátil (clique na setinha pra recolher/expandir; a
+  preferência fica salva no navegador).
 - ✅ Financeiro completo (entradas/saídas, fluxo de caixa, boletos a pagar com
   data de vencimento editável no "Adiado", exportação em CSV).
 - ✅ Estoque (produtos em uso, laços) com consumo automático a cada banho
@@ -35,6 +42,14 @@ lançar nada manualmente depois de um atendimento.
 
 ## Pontos de atenção para a próxima rodada (não bloqueiam o uso)
 
+- **"Pago" nas cobranças pendentes** do Dashboard marca o agendamento e o
+  lançamento financeiro correspondente como pago, sem pedir a forma de
+  pagamento de novo — se ela for importante nesse momento, é um ajuste
+  pontual de adicionar o seletor ali também.
+- **Remarcar** move o agendamento para o novo dia/horário escolhido e volta
+  o status para "confirmado" (o horário antigo fica livre de novo). Se
+  preferir manter os dois registros (o original cancelado + um novo), é
+  outra abordagem possível — hoje ele é só movido.
 - **Cadência do pacote automático**: quando cria um pacote mensal ou
   quinzenal novo em "Novo agendamento", o sistema agenda sozinho os próximos
   atendimentos a cada 7 dias (mensal) ou 15 dias (quinzenal), a partir da
