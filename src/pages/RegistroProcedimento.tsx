@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { todayISO } from '../lib/date'
+import { estoqueStatus } from '../lib/estoque'
 
 interface AgendamentoInfo {
   id: string
@@ -91,6 +92,32 @@ export function RegistroProcedimento() {
             .update({ banhos_usados_ciclo: pacote.banhos_usados_ciclo + 1 })
             .eq('id', pacote.id)
         }
+      }
+
+      // Todo banho consome os produtos em uso (shampoo, condicionador etc.) e um laço.
+      const { data: produtosAtivos } = await supabase
+        .from('estoque_produtos')
+        .select('id, banhos_realizados')
+        .neq('status', 'encerrado')
+      for (const p of (produtosAtivos as { id: string; banhos_realizados: number }[] | null) ?? []) {
+        const novoTotal = p.banhos_realizados + 1
+        await supabase
+          .from('estoque_produtos')
+          .update({ banhos_realizados: novoTotal, status: estoqueStatus(novoTotal) })
+          .eq('id', p.id)
+      }
+
+      const { data: lote } = await supabase
+        .from('estoque_lacos')
+        .select('id, quantidade_usada')
+        .order('data_registro', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (lote) {
+        await supabase
+          .from('estoque_lacos')
+          .update({ quantidade_usada: lote.quantidade_usada + 1 })
+          .eq('id', lote.id)
       }
 
       if (enviarWhatsapp) {
