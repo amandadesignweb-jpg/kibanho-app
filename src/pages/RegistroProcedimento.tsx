@@ -7,6 +7,8 @@ interface AgendamentoInfo {
   id: string
   pet_id: string
   tipo_servico: 'avulso' | 'pacote'
+  pagamento_status: 'pago' | 'pendente'
+  valor: number | null
   pet: { nome: string; tutor: { nome: string; telefone: string | null } | null } | null
 }
 
@@ -29,7 +31,7 @@ export function RegistroProcedimento() {
     if (!agendamentoId) return
     supabase
       .from('agendamentos')
-      .select('id, pet_id, tipo_servico, pet:pets(nome, tutor:tutores(nome, telefone))')
+      .select('id, pet_id, tipo_servico, pagamento_status, valor, pet:pets(nome, tutor:tutores(nome, telefone))')
       .eq('id', agendamentoId)
       .single()
       .then(({ data }) => setInfo(data as unknown as AgendamentoInfo))
@@ -65,6 +67,16 @@ export function RegistroProcedimento() {
       })
 
       await supabase.from('agendamentos').update({ status: 'realizado' }).eq('id', agendamentoId)
+
+      // Gera o lançamento financeiro correspondente ao banho (entrada), refletido em Financeiro.
+      await supabase.from('financeiro_lancamentos').insert({
+        tipo: 'entrada',
+        descricao: `${info.pet?.nome ?? 'Pet'} · ${info.pet?.tutor?.nome ?? 'Tutor'}`,
+        categoria: info.tipo_servico === 'pacote' ? 'Pacote' : 'Avulso',
+        valor: info.valor ?? 0,
+        status_pagamento: info.pagamento_status,
+        agendamento_id: agendamentoId,
+      })
 
       if (info.tipo_servico === 'pacote') {
         const { data: pacote } = await supabase
