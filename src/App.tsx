@@ -3,6 +3,11 @@ import { AuthProvider } from './lib/AuthContext'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
+import { Agenda } from './pages/Agenda'
+import { NovoAgendamento } from './pages/NovoAgendamento'
+import { RegistroProcedimento } from './pages/RegistroProcedimento'
+import { Clientes } from './pages/Clientes'
+import { FichaPet } from './pages/FichaPet'
 import { EmConstrucao } from './pages/EmConstrucao'
 
 export function App() {
@@ -13,8 +18,11 @@ export function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/agenda" element={<EmConstrucao titulo="Agenda" fase="Fase 1" />} />
-            <Route path="/clientes" element={<EmConstrucao titulo="Clientes & Pets" fase="Fase 1" />} />
+            <Route path="/agenda" element={<Agenda />} />
+            <Route path="/agenda/novo" element={<NovoAgendamento />} />
+            <Route path="/agenda/:agendamentoId/registrar" element={<RegistroProcedimento />} />
+            <Route path="/clientes" element={<Clientes />} />
+            <Route path="/clientes/:id" element={<FichaPet />} />
             <Route path="/financeiro" element={<EmConstrucao titulo="Financeiro" fase="Fase 2" />} />
             <Route path="/estoque" element={<EmConstrucao titulo="Estoque" fase="Fase 3" />} />
             <Route path="/relatorios" element={<EmConstrucao titulo="Relatórios" fase="Fase 3" />} />

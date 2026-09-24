@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/Card'
 import { Chip, TagPill, StatusPill } from '../components/ui/Pill'
@@ -117,6 +118,12 @@ export function Dashboard() {
             Aqui está o resumo do seu dia
           </div>
         </div>
+        <Link
+          to="/agenda/novo"
+          className="flex items-center gap-2 rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[11px] text-[13px] font-bold text-white"
+        >
+          + Novo agendamento
+        </Link>
       </div>
 
       <div className="flex items-center justify-between">
@@ -290,26 +297,30 @@ export function Dashboard() {
                   </div>
                   <div className="mt-[2px] text-[12px] text-text-muted">{a.hora.slice(0, 5)}</div>
                 </div>
-                <div className="flex gap-[6px]">
-                  <StatusPill
-                    active={a.status === 'realizado'}
-                    onClick={() => marcarAgendamento(a.id, 'realizado')}
-                  >
-                    Realizado
-                  </StatusPill>
-                  <StatusPill
-                    active={a.status === 'remarcado'}
-                    onClick={() => marcarAgendamento(a.id, 'remarcado')}
-                  >
-                    Remarcado
-                  </StatusPill>
-                  <StatusPill
-                    active={a.status === 'nao_realizado'}
-                    onClick={() => marcarAgendamento(a.id, 'nao_realizado')}
-                  >
-                    Não realizado
-                  </StatusPill>
-                </div>
+                {a.status === 'realizado' ? (
+                  <TagPill tone="blue">Realizado</TagPill>
+                ) : (
+                  <div className="flex gap-[6px]">
+                    <Link
+                      to={`/agenda/${a.id}/registrar`}
+                      className="inline-flex items-center gap-[5px] rounded-pill border border-transparent bg-gradient-to-br from-blue to-blue-dark px-3 py-[7px] text-[11px] font-bold text-white"
+                    >
+                      Realizado
+                    </Link>
+                    <StatusPill
+                      active={a.status === 'remarcado'}
+                      onClick={() => marcarAgendamento(a.id, 'remarcado')}
+                    >
+                      Remarcado
+                    </StatusPill>
+                    <StatusPill
+                      active={a.status === 'nao_realizado'}
+                      onClick={() => marcarAgendamento(a.id, 'nao_realizado')}
+                    >
+                      Não realizado
+                    </StatusPill>
+                  </div>
+                )}
               </div>
             ))}
           </div>
