@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/Card'
 import { Chip, TagPill } from '../components/ui/Pill'
 import { diasEmUso, ESTOQUE_CLASSES, ESTOQUE_LABEL } from '../lib/estoque'
+import { TIPO_PROCEDIMENTO_LABEL, TIPO_PROCEDIMENTO_OPCOES } from '../lib/procedimentos'
 import { formatMoney } from '../lib/date'
 import clsx from '../lib/clsx'
-import type { EstoqueLacos, EstoqueProduto } from '../types/database'
+import type { EstoqueLacos, EstoqueProduto, TipoProcedimento } from '../types/database'
 
 type Periodo = 'mes' | 'trimestre' | 'ano'
 
@@ -35,6 +36,11 @@ export function Relatorios() {
   const [receitaTotal, setReceitaTotal] = useState(0)
   const [pacotesAtivos, setPacotesAtivos] = useState(0)
   const [porTipo, setPorTipo] = useState({ pacote: 0, avulso: 0 })
+  const [porProcedimento, setPorProcedimento] = useState<Record<TipoProcedimento, number>>({
+    banho: 0,
+    banho_tosa: 0,
+    tosa_higienica: 0,
+  })
   const [semanas, setSemanas] = useState<Semana[]>([])
   const [produtos, setProdutos] = useState<EstoqueProduto[]>([])
   const [lotesLacos, setLotesLacos] = useState<EstoqueLacos[]>([])
@@ -44,18 +50,22 @@ export function Relatorios() {
     const { inicio, fim } = rangeFor(periodo)
 
     const [agRes, lancRes, pacotesRes, produtosRes, lacosRes] = await Promise.all([
-      supabase.from('agendamentos').select('data, tipo_servico').eq('status', 'realizado').gte('data', inicio).lte('data', fim),
+      supabase.from('agendamentos').select('data, tipo_servico, tipo_procedimento').eq('status', 'realizado').gte('data', inicio).lte('data', fim),
       supabase.from('financeiro_lancamentos').select('valor').eq('tipo', 'entrada').gte('data', inicio).lte('data', fim),
       supabase.from('pacotes_pet').select('id', { count: 'exact', head: true }).eq('status', 'ativo'),
       supabase.from('estoque_produtos').select('*').neq('status', 'encerrado').order('banhos_realizados', { ascending: false }),
       supabase.from('estoque_lacos').select('*'),
     ])
 
-    const ags = (agRes.data as { data: string; tipo_servico: 'avulso' | 'pacote' }[] | null) ?? []
+    const ags = (agRes.data as { data: string; tipo_servico: 'avulso' | 'pacote'; tipo_procedimento: TipoProcedimento }[] | null) ?? []
     setTotalBanhos(ags.length)
     const contagem = { pacote: 0, avulso: 0 }
     for (const a of ags) contagem[a.tipo_servico]++
     setPorTipo(contagem)
+
+    const contagemProc: Record<TipoProcedimento, number> = { banho: 0, banho_tosa: 0, tosa_higienica: 0 }
+    for (const a of ags) contagemProc[a.tipo_procedimento]++
+    setPorProcedimento(contagemProc)
 
     const receita = ((lancRes.data as { valor: number }[] | null) ?? []).reduce((s, l) => s + Number(l.valor), 0)
     setReceitaTotal(receita)
@@ -164,29 +174,34 @@ export function Relatorios() {
             </Card>
 
             <Card className="flex flex-1 flex-col gap-4 p-[22px]">
-              <div className="text-[13px] font-extrabold">Pacotes x Avulsos</div>
+              <div className="text-[13px] font-extrabold">Serviços mais realizados</div>
               {totalTipo === 0 ? (
                 <div className="text-[12px] text-text-muted">Nenhum banho realizado no período.</div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  <div>
-                    <div className="mb-[6px] flex justify-between text-[12px]">
-                      <span className="font-bold">Pacote</span>
-                      <span>{porTipo.pacote}</span>
-                    </div>
-                    <div className="h-[9px] overflow-hidden rounded-pill bg-border-faint">
-                      <div className="h-full rounded-pill bg-gradient-to-r from-blue to-blue-dark" style={{ width: `${pctPacote}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="mb-[6px] flex justify-between text-[12px]">
-                      <span className="font-bold">Avulso</span>
-                      <span>{porTipo.avulso}</span>
-                    </div>
-                    <div className="h-[9px] overflow-hidden rounded-pill bg-border-faint">
-                      <div className="h-full rounded-pill" style={{ width: `${100 - pctPacote}%`, background: '#cfc4b2' }} />
-                    </div>
-                  </div>
+                  {TIPO_PROCEDIMENTO_OPCOES.map((tipo, i) => {
+                    const count = porProcedimento[tipo]
+                    const pct = totalBanhos > 0 ? Math.round((count / totalBanhos) * 100) : 0
+                    const cores = [
+                      'bg-gradient-to-r from-blue to-blue-dark',
+                      'bg-gradient-to-r from-terracota to-terracota-dark',
+                      '',
+                    ]
+                    return (
+                      <div key={tipo}>
+                        <div className="mb-[6px] flex justify-between text-[12px]">
+                          <span className="font-bold">{TIPO_PROCEDIMENTO_LABEL[tipo]}</span>
+                          <span>{count}</span>
+                        </div>
+                        <div className="h-[9px] overflow-hidden rounded-pill bg-border-faint">
+                          <div
+                            className={clsx('h-full rounded-pill', cores[i])}
+                            style={{ width: `${pct}%`, background: i === 2 ? '#cfc4b2' : undefined }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
               <div className="mt-auto flex items-center gap-[14px] border-t border-[#ece5d8] pt-[14px]">

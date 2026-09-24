@@ -11,14 +11,17 @@ Storage) no backend. Publicado em https://kibanho.netlify.app
   configurações), com RLS, índices de performance e bucket de fotos.
 - ✅ Login e Dashboard (resumo do dia, cobranças pendentes, boletos vencendo,
   estoque para repor, ações rápidas nos agendamentos).
-- ✅ Agenda (semana + dia), Novo Agendamento (avulso/pacote), Registro de
-  Procedimento (fotos + anotação + envio por WhatsApp).
+- ✅ Agenda (semana + dia), Novo Agendamento (seletor de dia/horário em grade,
+  igual ao wireframe — com horários já ocupados desabilitados automaticamente),
+  Registro de Procedimento (fotos + anotação + envio por WhatsApp).
 - ✅ Clientes & Pets (cadastro rápido) e Ficha do Pet (progresso do pacote,
   histórico de atendimentos).
-- ✅ Financeiro completo (entradas/saídas, fluxo de caixa, boletos a pagar).
+- ✅ Financeiro completo (entradas/saídas, fluxo de caixa, boletos a pagar com
+  data de vencimento editável no "Adiado", exportação em CSV).
 - ✅ Estoque (produtos em uso, laços) com consumo automático a cada banho
   registrado.
-- ✅ Relatórios (banhos, receita, ticket médio, pacotes x avulsos, estoque).
+- ✅ Relatórios (banhos, receita, ticket médio, serviços mais realizados —
+  Banho / Banho + tosa / Tosa higiênica —, % de clientes com pacote, estoque).
 - ✅ Configurações (dados da empresa, tipos de pacote, notificações, conta e
   segurança).
 
@@ -32,8 +35,6 @@ lançar nada manualmente depois de um atendimento.
 - **Ativar proteção de senha vazada** no Supabase: Authentication → Policies
   → Password Security → ative "Leaked password protection". É um toggle,
   1 minuto, recomendado antes de repassar o acesso pra Janaína.
-- **"Adiado" em boletos** empurra o vencimento em 7 dias fixos — o ideal é
-  trocar por um seletor de data no próprio card, quando fizer sentido.
 - **Valor do banho no pacote**: o lançamento de entrada gerado para banhos de
   pacote é R$ 0 (o pacote já foi pago na hora da compra) — os relatórios de
   receita hoje refletem só entradas avulsas. Se quiser refletir um valor
@@ -41,6 +42,12 @@ lançar nada manualmente depois de um atendimento.
 - **Notificações em Configurações** (lembrete diário, cobranças pendentes
   etc.) hoje só guardam a preferência — ainda não existe um canal de envio
   (e-mail/push) implementado.
+- **Consumo de estoque**: todo banho registrado consome automaticamente todos
+  os produtos em uso (shampoo, condicionador etc.) e um laço, e o alerta de
+  reposição é calculado por contagem de banhos (20 = repor em breve, 30 =
+  repor agora — ajustável em `src/lib/estoque.ts`). É uma regra que criei pra
+  fazer os números se moverem sozinhos; vale validar com a Janaína se bate
+  com o consumo real do salão (nem todo pet usa todos os produtos).
 
 ## Rodando localmente
 

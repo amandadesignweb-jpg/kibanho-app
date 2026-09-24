@@ -48,10 +48,13 @@ export type AgendamentoStatus =
   | 'nao_realizado'
   | 'cancelado'
 
+export type TipoProcedimento = 'banho' | 'banho_tosa' | 'tosa_higienica'
+
 export interface Agendamento {
   id: string
   pet_id: string
   tipo_servico: 'avulso' | 'pacote'
+  tipo_procedimento: TipoProcedimento
   data: string
   hora: string
   status: AgendamentoStatus

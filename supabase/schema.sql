@@ -50,6 +50,7 @@ create table agendamentos (
   id uuid primary key default gen_random_uuid(),
   pet_id uuid not null references pets(id) on delete cascade,
   tipo_servico text not null check (tipo_servico in ('avulso','pacote')),
+  tipo_procedimento text not null default 'banho' check (tipo_procedimento in ('banho','banho_tosa','tosa_higienica')),
   data date not null,
   hora time not null,
   status text not null default 'confirmado' check (status in ('confirmado','realizado','remarcado','nao_realizado','cancelado')),

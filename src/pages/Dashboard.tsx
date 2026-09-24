@@ -28,6 +28,8 @@ export function Dashboard() {
   const [estoqueAlerta, setEstoqueAlerta] = useState<
     { id: string; nome: string; status: string; detalhe: string }[]
   >([])
+  const [adiandoId, setAdiandoId] = useState<string | null>(null)
+  const [novaData, setNovaData] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -72,11 +74,19 @@ export function Dashboard() {
     load()
   }
 
-  async function marcarBoleto(id: string, status: 'pago' | 'adiado') {
+  async function pagar(id: string) {
     const boleto = boletos.find((b) => b.id === id)
     if (!boleto) return
-    if (status === 'pago') await pagarBoleto(boleto)
-    else await adiarBoleto(boleto)
+    await pagarBoleto(boleto)
+    load()
+  }
+
+  async function confirmarAdiamento(id: string) {
+    const boleto = boletos.find((b) => b.id === id)
+    if (!boleto || !novaData) return
+    await adiarBoleto(boleto, novaData)
+    setAdiandoId(null)
+    setNovaData('')
     load()
   }
 
@@ -204,20 +214,45 @@ export function Dashboard() {
                         ? `Seu boleto ${vencimentoLabel(b.data_vencimento).toLowerCase()}`
                         : `Seu boleto está prestes a vencer · ${ESTADO_LABEL[estado]}`}
                     </div>
-                    <div className="mt-[6px] flex gap-[5px]">
-                      <button
-                        onClick={() => marcarBoleto(b.id, 'pago')}
-                        className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[10px] py-1 text-[9.5px] font-extrabold text-white"
-                      >
-                        Pago
-                      </button>
-                      <button
-                        onClick={() => marcarBoleto(b.id, 'adiado')}
-                        className="rounded-pill border border-border px-[10px] py-1 text-[9.5px] font-extrabold text-text-soft"
-                      >
-                        Adiado
-                      </button>
-                    </div>
+                    {adiandoId === b.id ? (
+                      <div className="mt-[6px] flex items-center gap-[5px]">
+                        <input
+                          type="date"
+                          value={novaData}
+                          onChange={(e) => setNovaData(e.target.value)}
+                          autoFocus
+                          className="rounded-lg border border-border px-2 py-1 text-[10.5px] outline-none focus:border-blue"
+                        />
+                        <button
+                          onClick={() => confirmarAdiamento(b.id)}
+                          disabled={!novaData}
+                          className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[10px] py-1 text-[9.5px] font-extrabold text-white disabled:opacity-50"
+                        >
+                          Confirmar
+                        </button>
+                        <button
+                          onClick={() => { setAdiandoId(null); setNovaData('') }}
+                          className="text-[9.5px] font-bold text-text-faint"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-[6px] flex gap-[5px]">
+                        <button
+                          onClick={() => pagar(b.id)}
+                          className="rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[10px] py-1 text-[9.5px] font-extrabold text-white"
+                        >
+                          Pago
+                        </button>
+                        <button
+                          onClick={() => { setAdiandoId(b.id); setNovaData(b.data_vencimento) }}
+                          className="rounded-pill border border-border px-[10px] py-1 text-[9.5px] font-extrabold text-text-soft"
+                        >
+                          Adiado
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )
               })}

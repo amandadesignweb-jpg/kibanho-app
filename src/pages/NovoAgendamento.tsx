@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { todayISO } from '../lib/date'
+import { formatBR } from '../lib/date'
+import { TIPO_PROCEDIMENTO_LABEL, TIPO_PROCEDIMENTO_OPCOES } from '../lib/procedimentos'
 import clsx from '../lib/clsx'
+import type { TipoProcedimento } from '../types/database'
 
 interface PetOpcao {
   id: string
@@ -14,6 +16,13 @@ interface TipoPacote {
   id: string
   nome: string
   valor: number
+}
+
+const HORARIOS = ['09:00', '10:00', '11:00', '11:30', '14:00', '15:00', '15:30', '16:00', '16:30', '17:00']
+const DIAS_SEMANA = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
+
+function toISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 export function NovoAgendamento() {
@@ -28,9 +37,17 @@ export function NovoAgendamento() {
   const [tiposPacote, setTiposPacote] = useState<TipoPacote[]>([])
   const [pacoteAtivoId, setPacoteAtivoId] = useState<string | null>(null)
   const [tipoServico, setTipoServico] = useState<'avulso' | 'pacote'>('avulso')
+  const [tipoProcedimento, setTipoProcedimento] = useState<TipoProcedimento>('banho')
 
-  const [data, setData] = useState(todayISO())
-  const [hora, setHora] = useState('09:00')
+  const dias = useMemo(() => Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() + i)
+    return d
+  }), [])
+
+  const [data, setData] = useState(toISO(dias[0]))
+  const [hora, setHora] = useState('')
+  const [horariosOcupados, setHorariosOcupados] = useState<string[]>([])
   const [pagamentoPendente, setPagamentoPendente] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -61,11 +78,28 @@ export function NovoAgendamento() {
       .then(({ data }) => setPacoteAtivoId((data as { id: string } | null)?.id ?? null))
   }, [petId])
 
+  useEffect(() => {
+    supabase
+      .from('agendamentos')
+      .select('hora')
+      .eq('data', data)
+      .neq('status', 'cancelado')
+      .then(({ data: rows }) => {
+        setHorariosOcupados(((rows as { hora: string }[] | null) ?? []).map((r) => r.hora.slice(0, 5)))
+        setHora('')
+      })
+  }, [data])
+
   const avulso = tiposPacote.find((t) => t.nome === 'Avulso')
+  const petSelecionado = pets.find((p) => p.id === petId)
 
   async function salvar() {
     if (!petId) {
       setErro('Selecione um pet.')
+      return
+    }
+    if (!hora) {
+      setErro('Selecione um horário.')
       return
     }
     setSalvando(true)
@@ -76,6 +110,7 @@ export function NovoAgendamento() {
       .insert({
         pet_id: petId,
         tipo_servico: tipoServico,
+        tipo_procedimento: tipoProcedimento,
         data,
         hora,
         status: 'confirmado',
@@ -159,26 +194,88 @@ export function NovoAgendamento() {
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <div className="flex-1">
-          <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Data</div>
-          <input
-            type="date"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-            className="w-full rounded-xl border border-border px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
-          />
-        </div>
-        <div className="flex-1">
-          <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Horário</div>
-          <input
-            type="time"
-            value={hora}
-            onChange={(e) => setHora(e.target.value)}
-            className="w-full rounded-xl border border-border px-[14px] py-[11px] text-[13px] outline-none focus:border-blue"
-          />
+      <div>
+        <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Procedimento</div>
+        <div className="flex gap-2">
+          {TIPO_PROCEDIMENTO_OPCOES.map((op) => (
+            <button
+              key={op}
+              onClick={() => setTipoProcedimento(op)}
+              className={clsx(
+                'flex-1 rounded-2xl border-[1.5px] py-[11px] text-center text-[12.5px] font-bold',
+                tipoProcedimento === op
+                  ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                  : 'border-border-soft text-text-soft'
+              )}
+            >
+              {TIPO_PROCEDIMENTO_LABEL[op]}
+            </button>
+          ))}
         </div>
       </div>
+
+      <div>
+        <div className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Data e horário</div>
+        <div className="mb-3 flex gap-[6px]">
+          {dias.map((d) => {
+            const iso = toISO(d)
+            const isSelected = iso === data
+            return (
+              <button
+                key={iso}
+                onClick={() => setData(iso)}
+                className={clsx(
+                  'flex-1 rounded-xl py-[9px] text-center',
+                  isSelected ? 'bg-gradient-to-br from-blue to-blue-dark text-white' : 'bg-[#f7f4ee]'
+                )}
+              >
+                <div className={clsx('text-[9px] font-bold', isSelected ? 'text-white/75' : 'text-text-faint')}>
+                  {DIAS_SEMANA[d.getDay()]}
+                </div>
+                <div className="mt-[2px] text-[13px] font-extrabold">{d.getDate()}</div>
+              </button>
+            )
+          })}
+        </div>
+        <div className="grid grid-cols-5 gap-2">
+          {HORARIOS.map((h) => {
+            const ocupado = horariosOcupados.includes(h)
+            const isSelected = h === hora
+            return (
+              <button
+                key={h}
+                disabled={ocupado}
+                onClick={() => setHora(h)}
+                className={clsx(
+                  'rounded-[11px] border-[1.5px] py-[9px] text-center text-[12px] font-bold',
+                  ocupado
+                    ? 'cursor-not-allowed border-dashed border-border-soft text-text-faint'
+                    : isSelected
+                      ? 'border-transparent bg-gradient-to-br from-blue to-blue-dark text-white'
+                      : 'border-border-soft text-ink hover:border-blue'
+                )}
+              >
+                {h}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {petSelecionado && hora && (
+        <div className="flex items-center gap-[10px] rounded-2xl bg-[#f7f4ee] px-4 py-3">
+          <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] bg-blue-tint text-blue-dark">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="3" />
+              <path d="M3 10h18" />
+            </svg>
+          </div>
+          <div className="text-[12.5px]">
+            <b>{petSelecionado.nome}</b> · {tipoServico === 'pacote' ? 'Pacote ativo' : 'Avulso'} ·{' '}
+            {DIAS_SEMANA[new Date(data + 'T00:00:00').getDay()]}, {formatBR(data)} às <b>{hora}</b>
+          </div>
+        </div>
+      )}
 
       <label className="flex items-center gap-[8px] text-[12.5px] font-semibold text-text-soft">
         <input
