@@ -132,10 +132,10 @@ export function Configuracoes() {
         <div className="mt-[2px] text-[12.5px] text-text-muted">Dados da empresa, pacotes, notificações e segurança</div>
       </div>
 
-      <div className="flex gap-[14px]">
+      <div className="flex flex-col gap-[14px] md:flex-row">
         <div className="flex flex-1 flex-col gap-[14px]">
           <Card className="p-[22px]">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div className="text-[13.5px] font-extrabold">Dados da empresa</div>
               <button
                 onClick={salvarEmpresa}
@@ -145,12 +145,12 @@ export function Configuracoes() {
                 {salvo ? 'Salvo ✓' : salvandoEmpresa ? 'Salvando…' : 'Salvar'}
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Campo label="Nome da empresa" value={config.empresa_nome} onChange={(v) => updateField('empresa_nome', v)} />
               <Campo label="Responsável" value={config.responsavel ?? ''} onChange={(v) => updateField('responsavel', v)} />
               <Campo label="Telefone / WhatsApp" value={config.telefone ?? ''} onChange={(v) => updateField('telefone', v)} />
               <Campo label="Instagram" value={config.instagram ?? ''} onChange={(v) => updateField('instagram', v)} />
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Campo label="Endereço" value={config.endereco ?? ''} onChange={(v) => updateField('endereco', v)} />
               </div>
             </div>
@@ -160,11 +160,11 @@ export function Configuracoes() {
             <div className="mb-2 text-[13.5px] font-extrabold">Tipos de pacote</div>
             {tipos.map((t) =>
               editandoId === t.id ? (
-                <div key={t.id} className="flex items-center gap-2 border-b border-[#ece5d8] py-3 last:border-none">
+                <div key={t.id} className="flex flex-wrap items-center gap-2 border-b border-[#ece5d8] py-3 last:border-none">
                   <input
                     value={editNome}
                     onChange={(e) => setEditNome(e.target.value)}
-                    className="flex-1 rounded-lg border border-border bg-[#fbf9f5] px-[10px] py-[7px] text-[12px] outline-none focus:border-blue"
+                    className="min-w-[100px] flex-1 rounded-lg border border-border bg-[#fbf9f5] px-[10px] py-[7px] text-[12px] outline-none focus:border-blue"
                   />
                   <input
                     value={editBanhos}
@@ -182,11 +182,11 @@ export function Configuracoes() {
                   <button onClick={() => setEditandoId(null)} className="text-[11.5px] font-bold text-text-faint">Cancelar</button>
                 </div>
               ) : (
-                <div key={t.id} className="flex items-center gap-[14px] border-b border-[#ece5d8] py-3 last:border-none">
+                <div key={t.id} className="flex flex-wrap items-center gap-[14px] border-b border-[#ece5d8] py-3 last:border-none">
                   <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-blue-tint text-[11px] font-extrabold text-blue-dark">
                     {t.nome.charAt(0).toUpperCase()}
                   </div>
-                  <div className="flex-grow">
+                  <div className="min-w-[120px] flex-grow">
                     <div className="text-[12.5px] font-bold">{t.nome}</div>
                     <div className="text-[11px] text-text-muted">
                       {t.banhos_por_ciclo} banho{t.banhos_por_ciclo !== 1 ? 's' : ''} por ciclo
@@ -200,12 +200,12 @@ export function Configuracoes() {
             )}
             {erroPacote && <div className="mt-2 text-[11.5px] font-semibold text-terracota-strong">{erroPacote}</div>}
 
-            <div className="mt-3 flex items-end gap-2">
+            <div className="mt-3 flex flex-wrap items-end gap-2">
               <input
                 placeholder="Nome"
                 value={novoPacoteNome}
                 onChange={(e) => setNovoPacoteNome(e.target.value)}
-                className="flex-1 rounded-lg border border-border bg-[#fbf9f5] px-[10px] py-[8px] text-[12px] outline-none focus:border-blue"
+                className="min-w-[100px] flex-1 rounded-lg border border-border bg-[#fbf9f5] px-[10px] py-[8px] text-[12px] outline-none focus:border-blue"
               />
               <input
                 placeholder="Banhos/ciclo"

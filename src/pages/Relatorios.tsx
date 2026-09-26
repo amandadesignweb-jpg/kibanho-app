@@ -111,7 +111,7 @@ export function Relatorios() {
 
   return (
     <div className="print-area flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-[19px] font-extrabold">Relatórios</div>
           <div className="mt-[2px] text-[12px] text-text-muted">
@@ -119,7 +119,7 @@ export function Relatorios() {
             {periodo === 'mes' ? 'este mês' : periodo === 'trimestre' ? 'último trimestre' : 'este ano'}
           </div>
         </div>
-        <div className="no-print flex items-center gap-2">
+        <div className="no-print flex flex-wrap items-center gap-2">
           <Chip active={periodo === 'mes'} onClick={() => setPeriodo('mes')}>Este mês</Chip>
           <Chip active={periodo === 'trimestre'} onClick={() => setPeriodo('trimestre')}>Trimestre</Chip>
           <Chip active={periodo === 'ano'} onClick={() => setPeriodo('ano')}>Ano</Chip>
@@ -139,27 +139,27 @@ export function Relatorios() {
         <div className="text-text-muted">Carregando…</div>
       ) : (
         <>
-          <div className="flex gap-3">
-            <Card className="flex-1 p-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Card className="p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Total de banhos</div>
               <div className="mt-1 text-[22px] font-extrabold">{totalBanhos}</div>
             </Card>
-            <Card className="flex-1 p-3">
+            <Card className="p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Receita total</div>
               <div className="mt-1 text-[22px] font-extrabold">{formatMoney(receitaTotal)}</div>
             </Card>
-            <Card className="flex-1 p-3">
+            <Card className="p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Ticket médio</div>
               <div className="mt-1 text-[22px] font-extrabold">{formatMoney(ticketMedio)}</div>
             </Card>
-            <Card className="flex-1 p-3">
+            <Card className="p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Pacotes ativos</div>
               <div className="mt-1 text-[22px] font-extrabold">{pacotesAtivos}</div>
             </Card>
           </div>
 
-          <div className="flex gap-3">
-            <Card className="flex-[1.4] p-4">
+          <div className="flex flex-col gap-3 md:flex-row">
+            <Card className="p-4 md:flex-[1.4]">
               <div className="mb-4 text-[13px] font-extrabold">Banhos por semana</div>
               {semanas.length === 0 ? (
                 <div className="text-[12px] text-text-muted">Sem dados no período.</div>
@@ -185,7 +185,7 @@ export function Relatorios() {
               )}
             </Card>
 
-            <Card className="flex flex-1 flex-col gap-3 p-4">
+            <Card className="flex flex-col gap-3 p-4 md:flex-1">
               <div className="text-[13px] font-extrabold">Serviços mais realizados</div>
               {totalTipo === 0 ? (
                 <div className="text-[12px] text-text-muted">Nenhum banho realizado no período.</div>
@@ -237,16 +237,16 @@ export function Relatorios() {
             {itensARepor > 0 && <TagPill tone="terracota">{itensARepor} ite{itensARepor !== 1 ? 'ns' : 'm'} a repor</TagPill>}
           </div>
 
-          <div className="flex gap-3">
-            <Card className="flex-[1.5] px-4 py-3">
+          <div className="flex flex-col gap-3 md:flex-row">
+            <Card className="overflow-x-auto px-4 py-3 md:flex-[1.5]">
               <div className="mb-2 text-[12px] font-extrabold">Produtos em uso</div>
               {produtos.length === 0 && <div className="text-[12px] text-text-muted">Nenhum produto ativo.</div>}
               {produtos.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 border-b border-[#ece5d8] py-2 last:border-none">
+                <div key={p.id} className="flex min-w-[380px] items-center gap-3 border-b border-[#ece5d8] py-2 last:border-none">
                   <div className="flex-[1.5] text-[12.5px] font-bold">{p.nome}</div>
-                  <div className="w-[70px] text-[11.5px] text-text-soft">{diasEmUso(p.data_abertura)} dias</div>
-                  <div className="w-[90px] text-[11.5px] text-text-soft">{p.banhos_realizados} banhos</div>
-                  <div className="w-[110px] text-right">
+                  <div className="w-[70px] shrink-0 text-[11.5px] text-text-soft">{diasEmUso(p.data_abertura)} dias</div>
+                  <div className="w-[90px] shrink-0 text-[11.5px] text-text-soft">{p.banhos_realizados} banhos</div>
+                  <div className="w-[110px] shrink-0 text-right">
                     <span className={clsx('rounded-pill px-[10px] py-[3px] text-[10px] font-extrabold', ESTOQUE_CLASSES[p.status])}>
                       {ESTOQUE_LABEL[p.status]}
                     </span>
@@ -258,7 +258,7 @@ export function Relatorios() {
               </Link>
             </Card>
 
-            <Card className="flex flex-1 flex-col gap-2 px-4 py-3">
+            <Card className="flex flex-col gap-2 px-4 py-3 md:flex-1">
               <div className="text-[12px] font-extrabold">Laços</div>
               <div className="flex gap-[18px]">
                 <div>

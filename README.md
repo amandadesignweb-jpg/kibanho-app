@@ -47,6 +47,15 @@ lançar nada manualmente depois de um atendimento.
 
 ## Pontos de atenção para a próxima rodada (não bloqueiam o uso)
 
+- **Responsividade para celular**: o menu lateral virou um menu "gaveta" no
+  celular (ícone de três linhas no topo, abre por cima da tela e fecha ao
+  tocar fora ou num item). Todas as telas foram revisadas pra funcionar em
+  telas pequenas — cartões e grades passam a empilhar em coluna única,
+  tabelas mais largas (Estoque, Financeiro, Relatórios) ganham rolagem
+  lateral só naquele cartão quando não cabem na largura, e as telas que
+  antes travavam numa altura fixa sem rolagem (Dashboard, Agenda, Clientes,
+  Novo agendamento) voltam a rolar normalmente no celular — o "sem rolagem"
+  vale só a partir de tablet/desktop, onde tem espaço de sobra.
 - **"Imprimir / Salvar PDF"** (Relatórios e no relatório de cada banho) usa a
   função de impressão do navegador — no diálogo que abre, é só escolher
   "Salvar como PDF" no lugar de uma impressora. Não gera o arquivo .pdf

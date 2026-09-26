@@ -335,15 +335,15 @@ export function NovoAgendamento() {
   )
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-48px)] max-w-[1040px] flex-col gap-3">
+    <div className="mx-auto flex h-auto max-w-[1040px] flex-col gap-3 md:h-[calc(100vh-48px)]">
       <div className="flex shrink-0 items-center justify-between">
         <div className="text-[18px] font-extrabold">Novo agendamento</div>
         <button onClick={() => navigate(-1)} className="text-text-muted">✕</button>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-5">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 md:grid-cols-2">
         {/* Coluna esquerda: pet, serviço, procedimento */}
-        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
+        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1 md:overflow-y-auto">
           <div>
             <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Pet</div>
             <div className="mb-2 flex gap-2">
@@ -409,8 +409,8 @@ export function NovoAgendamento() {
                   </label>
                   <div className="text-[11px] text-text-muted">Foto do pet (opcional)</div>
                 </div>
-                <div className="flex gap-2">
-                  <div className="flex-[1.4]">
+                <div className="flex flex-wrap gap-2">
+                  <div className="min-w-[120px] flex-[1.4]">
                     <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Nome do pet</div>
                     <input
                       value={novoPetNome}
@@ -431,8 +431,8 @@ export function NovoAgendamento() {
                     </select>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <div className="flex-1">
+                <div className="flex flex-wrap gap-2">
+                  <div className="min-w-[120px] flex-1">
                     <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Nome do tutor</div>
                     <input
                       value={novoTutorNome}
@@ -574,7 +574,7 @@ export function NovoAgendamento() {
             <div className="mb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">
               {ehPacoteNovo ? 'Data e horário do 1º atendimento' : 'Data e horário'}
             </div>
-            <div className="mb-2 flex gap-[5px]">
+            <div className="mb-2 flex gap-[5px] overflow-x-auto sm:overflow-visible">
               {dias.map((d) => {
                 const iso = toISO(d)
                 const isSelected = iso === data
@@ -583,7 +583,7 @@ export function NovoAgendamento() {
                     key={iso}
                     onClick={() => setData(iso)}
                     className={clsx(
-                      'flex-1 rounded-xl py-[7px] text-center',
+                      'w-[38px] shrink-0 rounded-xl py-[7px] text-center sm:w-auto sm:flex-1',
                       isSelected ? 'bg-gradient-to-br from-blue to-blue-dark text-white' : 'bg-[#f7f4ee]'
                     )}
                   >
@@ -595,7 +595,7 @@ export function NovoAgendamento() {
                 )
               })}
             </div>
-            <div className="grid grid-cols-5 gap-[6px]">
+            <div className="grid grid-cols-3 gap-[6px] sm:grid-cols-5">
               {HORARIOS.map((h) => {
                 const ocupado = horariosOcupados.includes(h)
                 const isSelected = h === hora
@@ -629,7 +629,7 @@ export function NovoAgendamento() {
                 {sessoes.map((s, i) => {
                   const ocupado = i > 0 && (ocupadosPorData[s.data] ?? []).includes(s.hora)
                   return (
-                    <div key={i} className="flex items-center gap-2 rounded-xl bg-[#f7f4ee] px-2 py-[6px]">
+                    <div key={i} className="flex flex-wrap items-center gap-2 rounded-xl bg-[#f7f4ee] px-2 py-[6px]">
                       <div className="w-4 text-center text-[10.5px] font-extrabold text-text-faint">{i + 1}</div>
                       <input
                         type="date"

@@ -88,7 +88,7 @@ export function Clientes() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-48px)] flex-col gap-3">
+    <div className="flex h-auto flex-col gap-3 md:h-[calc(100vh-48px)]">
       <div className="flex shrink-0 items-center justify-between">
         <div className="text-[19px] font-extrabold">Clientes &amp; Pets</div>
       </div>
@@ -102,7 +102,7 @@ export function Clientes() {
         />
         <button
           onClick={() => { setErro(null); setModalAberto(true) }}
-          className="whitespace-nowrap rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[9px] text-[13px] font-bold text-white"
+          className="whitespace-nowrap rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[14px] py-[9px] text-[13px] font-bold text-white sm:px-[18px]"
         >
           + Novo pet
         </button>
@@ -111,7 +111,7 @@ export function Clientes() {
       {loading ? (
         <div className="text-text-muted">Carregando…</div>
       ) : (
-        <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-4 gap-2.5 overflow-y-auto pb-2">
+        <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-2.5 overflow-y-auto pb-2 sm:grid-cols-3 md:grid-cols-4">
           {filtrados.map((p) => (
             <Link key={p.id} to={`/clientes/${p.id}`}>
               <Card className="flex items-center gap-2.5 p-3 hover:shadow-lg">
@@ -122,15 +122,15 @@ export function Clientes() {
                     IMG
                   </div>
                 )}
-                <div>
-                  <div className="text-[12.5px] font-bold">{p.nome}</div>
-                  <div className="text-[11px] text-text-muted">{p.tutor?.nome ?? '—'}</div>
+                <div className="min-w-0">
+                  <div className="truncate text-[12.5px] font-bold">{p.nome}</div>
+                  <div className="truncate text-[11px] text-text-muted">{p.tutor?.nome ?? '—'}</div>
                 </div>
               </Card>
             </Link>
           ))}
           {filtrados.length === 0 && (
-            <div className="col-span-4 text-[13px] text-text-muted">Nenhum pet encontrado.</div>
+            <div className="col-span-2 text-[13px] text-text-muted sm:col-span-3 md:col-span-4">Nenhum pet encontrado.</div>
           )}
         </div>
       )}
@@ -178,8 +178,8 @@ function NovoPetFormulario({
           </label>
           <div className="text-[11.5px] text-text-muted">Foto do pet (opcional)</div>
         </div>
-        <div className="flex gap-3">
-          <div className="flex-[1.4]">
+        <div className="flex flex-wrap gap-3">
+          <div className="min-w-[140px] flex-[1.4]">
             <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">Nome do pet</div>
             <input
               value={pet}

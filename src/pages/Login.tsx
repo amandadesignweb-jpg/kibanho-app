@@ -53,7 +53,7 @@ export function Login() {
           </ul>
         </div>
 
-        <div className="flex w-full flex-col gap-5 bg-card p-10">
+        <div className="flex w-full flex-col gap-5 bg-card p-6 sm:p-10">
           <div>
             <div className="text-xl font-extrabold text-ink">Bem-vinda de volta</div>
             <div className="mt-1 text-[13px] text-text-muted">

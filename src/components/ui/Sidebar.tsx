@@ -63,56 +63,22 @@ const ICONS: Record<string, JSX.Element> = {
   ),
 }
 
-export function Sidebar() {
-  const [colapsado, setColapsado] = useState(() => {
-    try {
-      return localStorage.getItem(CHAVE_COLAPSADO) === '1'
-    } catch {
-      return false
-    }
-  })
-
-  function alternar() {
-    setColapsado((atual) => {
-      const novo = !atual
-      try {
-        localStorage.setItem(CHAVE_COLAPSADO, novo ? '1' : '0')
-      } catch {
-        // ignora — preferência de UI, não é crítico
-      }
-      return novo
-    })
-  }
-
+function NavItems({
+  colapsado,
+  onNavigate,
+}: {
+  colapsado: boolean
+  onNavigate?: () => void
+}) {
   return (
-    <div
-      className={clsx(
-        'no-print relative flex shrink-0 flex-col gap-1 bg-card p-[14px] pt-6 transition-[width] duration-200',
-        colapsado ? 'w-[68px]' : 'w-[216px]'
-      )}
-    >
-      <button
-        onClick={alternar}
-        title={colapsado ? 'Expandir menu' : 'Recolher menu'}
-        className="absolute -right-3 top-8 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-text-faint shadow-card hover:text-blue"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-          {colapsado ? <path d="M9 6l6 6-6 6" /> : <path d="M15 6l-6 6 6 6" />}
-        </svg>
-      </button>
-
-      <div className={clsx('flex items-center gap-[10px] pb-[22px]', colapsado ? 'justify-center px-0' : 'px-2')}>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-blue to-blue-dark text-[14px] font-extrabold text-white">
-          K
-        </div>
-        {!colapsado && <div className="text-[15px] font-extrabold">Gestão Kibanho</div>}
-      </div>
+    <>
       {NAV_ITEMS.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
           end={item.to === '/'}
           title={colapsado ? item.label : undefined}
+          onClick={onNavigate}
           className={({ isActive }) =>
             clsx(
               'flex items-center gap-[10px] rounded-xl py-[10px] text-[13px] font-bold',
@@ -139,6 +105,83 @@ export function Sidebar() {
           {!colapsado && item.label}
         </NavLink>
       ))}
-    </div>
+    </>
+  )
+}
+
+export function Sidebar({
+  mobileOpen = false,
+  onCloseMobile,
+}: {
+  mobileOpen?: boolean
+  onCloseMobile?: () => void
+}) {
+  const [colapsado, setColapsado] = useState(() => {
+    try {
+      return localStorage.getItem(CHAVE_COLAPSADO) === '1'
+    } catch {
+      return false
+    }
+  })
+
+  function alternar() {
+    setColapsado((atual) => {
+      const novo = !atual
+      try {
+        localStorage.setItem(CHAVE_COLAPSADO, novo ? '1' : '0')
+      } catch {
+        // ignora — preferência de UI, não é crítico
+      }
+      return novo
+    })
+  }
+
+  return (
+    <>
+      {/* Desktop/tablet: coluna fixa, recolhível */}
+      <div
+        className={clsx(
+          'no-print relative hidden shrink-0 flex-col gap-1 bg-card p-[14px] pt-6 transition-[width] duration-200 md:flex',
+          colapsado ? 'w-[68px]' : 'w-[216px]'
+        )}
+      >
+        <button
+          onClick={alternar}
+          title={colapsado ? 'Expandir menu' : 'Recolher menu'}
+          className="absolute -right-3 top-8 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-text-faint shadow-card hover:text-blue"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            {colapsado ? <path d="M9 6l6 6-6 6" /> : <path d="M15 6l-6 6 6 6" />}
+          </svg>
+        </button>
+
+        <div className={clsx('flex items-center gap-[10px] pb-[22px]', colapsado ? 'justify-center px-0' : 'px-2')}>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-blue to-blue-dark text-[14px] font-extrabold text-white">
+            K
+          </div>
+          {!colapsado && <div className="text-[15px] font-extrabold">Gestão Kibanho</div>}
+        </div>
+        <NavItems colapsado={colapsado} />
+      </div>
+
+      {/* Mobile: menu em drawer, sobreposto, fechado por padrão */}
+      {mobileOpen && (
+        <div className="no-print fixed inset-0 z-50 flex md:hidden">
+          <div className="absolute inset-0 bg-ink/50" onClick={onCloseMobile} />
+          <div className="relative flex h-full w-[248px] flex-col gap-1 bg-card p-[14px] pt-6 shadow-2xl">
+            <div className="flex items-center justify-between px-2 pb-[18px]">
+              <div className="flex items-center gap-[10px]">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-blue to-blue-dark text-[14px] font-extrabold text-white">
+                  K
+                </div>
+                <div className="text-[15px] font-extrabold">Gestão Kibanho</div>
+              </div>
+              <button onClick={onCloseMobile} className="text-text-muted">✕</button>
+            </div>
+            <NavItems colapsado={false} onNavigate={onCloseMobile} />
+          </div>
+        </div>
+      )}
+    </>
   )
 }

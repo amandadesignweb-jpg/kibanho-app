@@ -135,12 +135,12 @@ export function Financeiro() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-[19px] font-extrabold">Financeiro</div>
           <div className="mt-[2px] text-[12px] text-text-muted">{label}</div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Chip active={periodo === 0} onClick={() => setPeriodo(0)}>
             Este mês
           </Chip>
@@ -165,8 +165,8 @@ export function Financeiro() {
         <div className="text-text-muted">Carregando…</div>
       ) : (
         <>
-          <div className="flex gap-3">
-            <Card tone="blue" className="relative flex-1 overflow-hidden p-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Card tone="blue" className="relative overflow-hidden p-3">
               <div className="pointer-events-none absolute -right-10 -top-12 h-[140px] w-[140px] rounded-full bg-white/10 blur-sm" />
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-white/70">Entradas</div>
               <div className="mt-1 text-[22px] font-black">{formatMoney(totalEntradas)}</div>
@@ -174,21 +174,21 @@ export function Financeiro() {
                 {entradas.length} banho{entradas.length !== 1 ? 's' : ''}
               </div>
             </Card>
-            <Card tone="terracota" className="flex-1 p-3">
+            <Card tone="terracota" className="p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-terracota">Saídas</div>
               <div className="mt-1 text-[20px] font-extrabold text-terracota-dark">{formatMoney(totalSaidas)}</div>
               <div className="mt-2 inline-block rounded-pill bg-terracota-tint px-[10px] py-1 text-[10.5px] font-bold text-terracota-dark">
                 Gastos fixos + produtos
               </div>
             </Card>
-            <Card className="flex-1 p-3">
+            <Card className="p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Ticket médio</div>
               <div className="mt-1 text-[20px] font-extrabold">{formatMoney(ticketMedio)}</div>
               <div className="mt-2 text-[10.5px] text-text-muted">
                 {entradas.length} banho{entradas.length !== 1 ? 's' : ''} no período
               </div>
             </Card>
-            <Card className="flex-1 p-3">
+            <Card className="p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">Saldo do período</div>
               <div className="mt-1 text-[20px] font-extrabold">{formatMoney(saldo)}</div>
               <div className={clsx('mt-2 text-[10.5px] font-bold', saldo >= 0 ? 'text-blue' : 'text-terracota-strong')}>
@@ -197,8 +197,8 @@ export function Financeiro() {
             </Card>
           </div>
 
-          <div className="flex gap-3">
-            <Card className="flex-[1.6] p-4">
+          <div className="flex flex-col gap-3 md:flex-row">
+            <Card className="p-4 md:flex-[1.6]">
               <div className="mb-3 text-[12.5px] font-extrabold">Fluxo de caixa — últimos {DIAS_FLUXO} dias</div>
               <div className="flex h-[100px] items-end gap-[9px]">
                 {diasFluxo.map((d) => {
@@ -225,7 +225,7 @@ export function Financeiro() {
               </div>
             </Card>
 
-            <Card className="flex flex-1 flex-col gap-3 p-4">
+            <Card className="flex flex-col gap-3 p-4 md:flex-1">
               <div className="text-[12.5px] font-extrabold">Pacotes x Avulsos</div>
               {totalServicos === 0 ? (
                 <div className="text-[12px] text-text-muted">Nenhum banho realizado no período.</div>
@@ -284,12 +284,12 @@ export function Financeiro() {
             )}
           </div>
 
-          <Card className="px-4 py-1">
+          <Card className="overflow-x-auto px-4 py-1">
             {lancamentos.length === 0 && (
               <div className="py-3 text-[13px] text-text-muted">Nenhum lançamento no período.</div>
             )}
             {lancamentosPagina.map((l) => (
-              <div key={l.id} className="flex items-center gap-3 border-b border-[#ece5d8] py-2 last:border-none">
+              <div key={l.id} className="flex min-w-[420px] items-center gap-3 border-b border-[#ece5d8] py-2 last:border-none">
                 <div className="w-[55px] shrink-0 text-[11px] text-text-faint">{formatBR(l.data)}</div>
                 <div className="flex-grow text-[12.5px] font-bold">{l.descricao}</div>
                 <TagPill tone={l.tipo === 'entrada' ? 'blue' : 'terracota'}>
@@ -297,13 +297,13 @@ export function Financeiro() {
                 </TagPill>
                 <div
                   className={clsx(
-                    'w-20 text-right text-[12.5px] font-extrabold',
+                    'w-20 shrink-0 text-right text-[12.5px] font-extrabold',
                     l.tipo === 'saida' ? 'text-terracota-dark' : ''
                   )}
                 >
                   {formatMoney(Number(l.valor))}
                 </div>
-                <div className="w-14 text-center">
+                <div className="w-14 shrink-0 text-center">
                   {l.status_pagamento === 'pendente' ? (
                     <TagPill tone="terracota">Pendente</TagPill>
                   ) : (
@@ -334,12 +334,12 @@ export function Financeiro() {
             load()
           }} />
 
-          <Card className="px-4 py-1">
+          <Card className="overflow-x-auto px-4 py-1">
             {boletos.length === 0 && <div className="py-3 text-[13px] text-text-muted">Nenhuma conta pendente.</div>}
             {boletos.map((b) => {
               const estado = boletoEstado(b)
               return (
-                <div key={b.id} className="flex items-center gap-[14px] border-b border-[#ece5d8] py-2 last:border-none">
+                <div key={b.id} className="flex min-w-[560px] items-center gap-[14px] border-b border-[#ece5d8] py-2 last:border-none">
                   <div className="flex-grow">
                     <div className="flex items-center gap-2">
                       <div className="text-[13px] font-bold">{b.nome}</div>
@@ -351,14 +351,14 @@ export function Financeiro() {
                   </div>
                   <div
                     className={clsx(
-                      'w-[130px] text-[11.5px] font-bold',
+                      'w-[130px] shrink-0 text-[11.5px] font-bold',
                       estado === 'atrasado' ? 'text-terracota-strong' : 'text-terracota'
                     )}
                   >
                     {vencimentoLabel(b.data_vencimento)}
                   </div>
-                  <div className="w-[74px] text-right text-[13px] font-extrabold">{formatMoney(Number(b.valor))}</div>
-                  <div className={clsx('w-[66px] rounded-pill py-[4px] text-center text-[10.5px] font-extrabold', ESTADO_CLASSES[estado])}>
+                  <div className="w-[74px] shrink-0 text-right text-[13px] font-extrabold">{formatMoney(Number(b.valor))}</div>
+                  <div className={clsx('w-[66px] shrink-0 rounded-pill py-[4px] text-center text-[10.5px] font-extrabold', ESTADO_CLASSES[estado])}>
                     {ESTADO_LABEL[estado]}
                   </div>
                   {adiandoId === b.id ? (
@@ -438,18 +438,18 @@ function NovoBoletoForm({
 
   return (
     <Card className="flex flex-col gap-2 p-4">
-      <div className="flex items-center gap-[10px]">
+      <div className="flex flex-wrap items-center gap-[10px]">
         <input
           placeholder="Nome do boleto"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          className="flex-[1.3] rounded-xl border border-border bg-bg px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue"
+          className="min-w-[140px] flex-[1.3] rounded-xl border border-border bg-bg px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue"
         />
         <input
           placeholder="Categoria"
           value={categoria}
           onChange={(e) => setCategoria(e.target.value)}
-          className="flex-1 rounded-xl border border-border bg-bg px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue"
+          className="min-w-[100px] flex-1 rounded-xl border border-border bg-bg px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue"
         />
         <input
           placeholder="Valor"

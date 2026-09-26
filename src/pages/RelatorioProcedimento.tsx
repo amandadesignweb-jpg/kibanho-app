@@ -59,7 +59,7 @@ export function RelatorioProcedimento() {
 
   return (
     <div className="print-area mx-auto flex max-w-[680px] flex-col gap-4">
-      <div className="no-print flex items-center justify-end gap-2">
+      <div className="no-print flex flex-wrap items-center justify-end gap-2">
         <button
           onClick={() => window.print()}
           className="flex items-center gap-2 rounded-pill bg-gradient-to-br from-blue to-blue-dark px-4 py-[10px] text-[13px] font-bold text-white"
@@ -84,7 +84,7 @@ export function RelatorioProcedimento() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 text-[13px]">
+      <div className="grid grid-cols-1 gap-3 text-[13px] sm:grid-cols-2">
         <div>
           <div className="text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">Pet</div>
           <div className="font-bold">{relatorio.pet?.nome} · {relatorio.pet?.especie}</div>

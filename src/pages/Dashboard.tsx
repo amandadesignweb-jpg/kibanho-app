@@ -111,7 +111,7 @@ export function Dashboard() {
   })
 
   return (
-    <div className="flex h-[calc(100vh-48px)] flex-col gap-3">
+    <div className="flex h-auto flex-col gap-3 md:h-[calc(100vh-48px)]">
       <div className="flex shrink-0 items-center justify-between">
         <div>
           <div className="text-[19px] font-extrabold">Boa tarde, Janaína</div>
@@ -121,9 +121,10 @@ export function Dashboard() {
         </div>
         <Link
           to="/agenda/novo"
-          className="flex items-center gap-2 rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[10px] text-[13px] font-bold text-white"
+          className="flex items-center gap-2 rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[14px] py-[10px] text-[13px] font-bold text-white sm:px-[18px]"
         >
-          + Novo agendamento
+          <span className="sm:hidden">+ Agendar</span>
+          <span className="hidden sm:inline">+ Novo agendamento</span>
         </Link>
       </div>
 
@@ -131,21 +132,21 @@ export function Dashboard() {
         <div className="text-text-muted">Carregando…</div>
       ) : (
         <>
-          <div className="flex shrink-0 gap-3">
-            <Card tone="blue" className="relative flex-1 overflow-hidden p-3">
+          <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
+            <Card tone="blue" className="relative overflow-hidden p-3">
               <div className="pointer-events-none absolute -right-10 -top-12 h-[120px] w-[120px] rounded-full bg-white/10 blur-sm" />
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-white/70">
                 Banhos hoje
               </div>
               <div className="mt-1 text-[28px] font-black">{banhosHoje}</div>
             </Card>
-            <Card className="flex-1 p-3">
+            <Card className="p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-faint">
                 Horários livres
               </div>
               <div className="mt-1 text-[24px] font-extrabold">{horariosLivres}</div>
             </Card>
-            <Card tone="terracota" className="flex-1 p-3">
+            <Card tone="terracota" className="p-3">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-terracota">
                 Pendências
               </div>
@@ -156,7 +157,7 @@ export function Dashboard() {
                 {pendencias.length} pendente{pendencias.length !== 1 ? 's' : ''}
               </TagPill>
             </Card>
-            <Card className="flex flex-1 items-center gap-3 p-3">
+            <Card className="flex items-center gap-3 p-3">
               <div
                 className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full"
                 style={{
@@ -173,7 +174,7 @@ export function Dashboard() {
             </Card>
           </div>
 
-          <div className="grid shrink-0 grid-cols-3 gap-3">
+          <div className="grid shrink-0 grid-cols-1 gap-3 md:grid-cols-3">
             <Card tone="terracota" className="max-h-[150px] overflow-y-auto p-3">
               <div className="mb-2 flex items-center justify-between">
                 <div className="text-[12px] font-extrabold">Cobranças pendentes</div>
@@ -183,8 +184,8 @@ export function Dashboard() {
                 <div className="text-[11.5px] text-text-muted">Nenhuma pendência hoje.</div>
               )}
               {pendencias.map((a) => (
-                <div key={a.id} className="flex items-center justify-between border-b border-terracota-border py-[6px] last:border-none">
-                  <div className="text-[11.5px] font-bold">
+                <div key={a.id} className="flex flex-wrap items-center justify-between gap-1 border-b border-terracota-border py-[6px] last:border-none">
+                  <div className="min-w-0 text-[11.5px] font-bold">
                     {a.pet?.nome} · {a.pet?.tutor?.nome ?? '—'}
                   </div>
                   <div className="flex items-center gap-[6px]">
@@ -303,7 +304,7 @@ export function Dashboard() {
               <div
                 key={a.id}
                 className={
-                  'flex items-center gap-3 rounded-2xl p-[9px_13px] shadow-rowcard ' +
+                  'flex flex-wrap items-center gap-3 rounded-2xl p-[9px_13px] shadow-rowcard ' +
                   (a.pagamento_status === 'pendente'
                     ? 'border border-terracota-border bg-terracota-tint2'
                     : 'bg-card')
@@ -312,7 +313,7 @@ export function Dashboard() {
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-tint text-[8px] font-bold text-blue">
                   IMG
                 </div>
-                <div className="flex-grow">
+                <div className="min-w-0 flex-grow">
                   <div className="flex items-center gap-2">
                     <div className="text-[13px] font-bold">{a.pet?.nome}</div>
                     <TagPill tone={a.tipo_servico === 'pacote' ? 'blue' : 'neutral'}>
@@ -327,7 +328,7 @@ export function Dashboard() {
                 {a.status === 'realizado' ? (
                   <TagPill tone="blue">Realizado</TagPill>
                 ) : (
-                  <div className="flex gap-[6px]">
+                  <div className="flex flex-wrap gap-[6px]">
                     <Link
                       to={`/agenda/${a.id}/registrar`}
                       className="inline-flex items-center gap-[5px] rounded-pill border border-transparent bg-gradient-to-br from-blue to-blue-dark px-3 py-[6px] text-[11px] font-bold text-white"

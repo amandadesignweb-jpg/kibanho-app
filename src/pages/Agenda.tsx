@@ -94,8 +94,8 @@ export function Agenda() {
   })
 
   return (
-    <div className="flex h-[calc(100vh-48px)] flex-col gap-3">
-      <div className="flex shrink-0 items-center justify-between">
+    <div className="flex h-auto flex-col gap-3 md:h-[calc(100vh-48px)]">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-[19px] font-extrabold">Agenda</div>
           <div className="mt-[2px] text-[12px] text-text-muted">
@@ -106,9 +106,10 @@ export function Agenda() {
           <Chip active>Semana</Chip>
           <Link
             to="/agenda/novo"
-            className="flex items-center gap-2 rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[10px] text-[13px] font-bold text-white"
+            className="flex items-center gap-2 rounded-pill bg-gradient-to-br from-blue to-blue-dark px-[14px] py-[10px] text-[13px] font-bold text-white sm:px-[18px]"
           >
-            + Novo agendamento
+            <span className="sm:hidden">+ Agendar</span>
+            <span className="hidden sm:inline">+ Novo agendamento</span>
           </Link>
         </div>
       </div>
@@ -116,11 +117,11 @@ export function Agenda() {
       <div className="flex shrink-0 items-center gap-2">
         <button
           onClick={() => setRefDate((d) => { const n = new Date(d); n.setDate(n.getDate() - 7); return n })}
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-card shadow-card"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-card shadow-card"
         >
           ‹
         </button>
-        <div className="flex flex-1 gap-2">
+        <div className="flex flex-1 gap-2 overflow-x-auto sm:overflow-visible">
           {semana.map((d) => {
             const iso = toISO(d)
             const isSelected = iso === selected
@@ -130,7 +131,7 @@ export function Agenda() {
                 key={iso}
                 onClick={() => setSelected(iso)}
                 className={clsx(
-                  'flex-1 rounded-xl py-[7px] text-center',
+                  'w-[42px] shrink-0 rounded-xl py-[7px] text-center sm:w-auto sm:flex-1',
                   isSelected
                     ? 'bg-gradient-to-br from-blue to-blue-dark text-white'
                     : isHoje
@@ -151,7 +152,7 @@ export function Agenda() {
         </div>
         <button
           onClick={() => setRefDate((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n })}
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-card shadow-card"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-card shadow-card"
         >
           ›
         </button>
@@ -162,7 +163,7 @@ export function Agenda() {
       {loading ? (
         <div className="text-text-muted">Carregando…</div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto md:h-auto">
           {agendamentosOrdenados.length === 0 && (
             <div className="text-[13px] text-text-muted">Nenhum agendamento neste dia.</div>
           )}
@@ -170,14 +171,14 @@ export function Agenda() {
             <div
               key={a.id}
               className={clsx(
-                'flex items-center gap-3 rounded-2xl p-[9px_13px] shadow-rowcard',
+                'flex flex-wrap items-center gap-3 rounded-2xl p-[9px_13px] shadow-rowcard',
                 a.pagamento_status === 'pendente' ? 'border border-terracota-border bg-terracota-tint2' : 'bg-card'
               )}
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-tint text-[8px] font-bold text-blue">
                 IMG
               </div>
-              <div className="flex-grow">
+              <div className="min-w-0 flex-grow">
                 <div className="flex items-center gap-2">
                   <div className="text-[13px] font-bold">{a.pet?.nome}</div>
                   <TagPill tone={a.tipo_servico === 'pacote' ? 'blue' : 'neutral'}>
@@ -191,7 +192,7 @@ export function Agenda() {
               {a.status === 'realizado' ? (
                 <TagPill tone="blue">Realizado</TagPill>
               ) : (
-                <div className="flex gap-[6px]">
+                <div className="flex flex-wrap gap-[6px]">
                   <Link
                     to={`/agenda/${a.id}/registrar`}
                     className="inline-flex items-center gap-[5px] rounded-pill border border-transparent bg-gradient-to-br from-blue to-blue-dark px-3 py-[6px] text-[11px] font-bold text-white"

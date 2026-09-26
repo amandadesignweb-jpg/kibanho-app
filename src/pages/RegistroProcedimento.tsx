@@ -226,7 +226,7 @@ export function RegistroProcedimento() {
 
       {erro && <div className="text-[12.5px] font-semibold text-terracota-strong">{erro}</div>}
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col-reverse justify-end gap-2 sm:flex-row">
         <button
           onClick={() => concluir(false)}
           disabled={salvando || fotos.length === 0}

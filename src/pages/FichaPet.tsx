@@ -214,7 +214,7 @@ export function FichaPet() {
                 )}
                 <input type="file" accept="image/*" hidden onChange={(e) => setEditFoto(e.target.files?.[0] ?? null)} />
               </label>
-              <div className="grid flex-1 grid-cols-2 gap-2">
+              <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
                 <input
                   value={editNome}
                   onChange={(e) => setEditNome(e.target.value)}
@@ -232,7 +232,7 @@ export function FichaPet() {
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
                 value={editRaca}
                 onChange={(e) => setEditRaca(e.target.value)}
@@ -246,7 +246,7 @@ export function FichaPet() {
                 className="rounded-xl border border-border px-3 py-[8px] text-[12.5px] outline-none focus:border-blue"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
                 value={editTutorNome}
                 onChange={(e) => setEditTutorNome(e.target.value)}
@@ -278,7 +278,7 @@ export function FichaPet() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {pet.foto_url ? (
               <img src={pet.foto_url} alt={pet.nome} className="h-[54px] w-[54px] shrink-0 rounded-full object-cover" />
             ) : (
@@ -286,7 +286,7 @@ export function FichaPet() {
                 IMG
               </div>
             )}
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <div className="text-[16px] font-extrabold">{pet.nome}</div>
               <div className="text-[12px] text-text-muted">
                 {pet.especie}
@@ -325,7 +325,7 @@ export function FichaPet() {
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <div className="mb-1.5 text-[12px] font-extrabold">Próximos banhos</div>
           {proximos.length === 0 ? (
@@ -432,9 +432,10 @@ export function FichaPet() {
 
       <Link
         to={`/agenda/novo?pet=${pet.id}`}
-        className="fixed bottom-8 right-8 flex items-center gap-2 rounded-pill bg-gradient-to-br from-blue to-blue-dark px-5 py-[13px] text-[13px] font-bold text-white shadow-lg"
+        className="fixed bottom-5 right-5 flex items-center gap-2 rounded-pill bg-gradient-to-br from-blue to-blue-dark px-4 py-[12px] text-[12.5px] font-bold text-white shadow-lg sm:bottom-8 sm:right-8 sm:px-5 sm:py-[13px] sm:text-[13px]"
       >
-        + Novo agendamento
+        <span className="sm:hidden">+ Agendar</span>
+        <span className="hidden sm:inline">+ Novo agendamento</span>
       </Link>
     </div>
   )

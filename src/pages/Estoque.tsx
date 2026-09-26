@@ -85,23 +85,23 @@ export function Estoque() {
         <div className="mb-[6px] text-[11px] font-extrabold uppercase tracking-wider text-text-faint">
           Registrar novo produto
         </div>
-        <div className="flex items-end gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <input
             placeholder="Nome do produto"
             value={nomeProduto}
             onChange={(e) => setNomeProduto(e.target.value)}
-            className="flex-[1.4] rounded-xl border border-border bg-[#fbf9f5] px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue"
+            className="rounded-xl border border-border bg-[#fbf9f5] px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue sm:flex-[1.4]"
           />
           <input
             type="date"
             value={dataAbertura}
             onChange={(e) => setDataAbertura(e.target.value)}
-            className="flex-1 rounded-xl border border-border bg-[#fbf9f5] px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue"
+            className="rounded-xl border border-border bg-[#fbf9f5] px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue sm:flex-1"
           />
           <button
             onClick={registrarProduto}
             disabled={salvandoProduto || !nomeProduto}
-            className="flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[11px] text-[12.5px] font-bold text-white disabled:opacity-60"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-blue to-blue-dark px-[18px] py-[11px] text-[12.5px] font-bold text-white disabled:opacity-60"
           >
             + Registrar
           </button>
@@ -116,22 +116,22 @@ export function Estoque() {
       {loading ? (
         <div className="text-text-muted">Carregando…</div>
       ) : (
-        <Card className="px-[22px] py-1">
-          <div className="flex items-center gap-[14px] border-b border-[#ece5d8] py-[10px] text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">
+        <Card className="overflow-x-auto px-[22px] py-1">
+          <div className="flex min-w-[560px] items-center gap-[14px] border-b border-[#ece5d8] py-[10px] text-[10.5px] font-extrabold uppercase tracking-wider text-text-faint">
             <div className="flex-[1.6]">Produto</div>
-            <div className="w-[90px]">Aberto em</div>
-            <div className="w-[100px]">Em uso há</div>
-            <div className="w-[130px]">Banhos realizados</div>
-            <div className="w-[130px] text-right">Status</div>
+            <div className="w-[90px] shrink-0">Aberto em</div>
+            <div className="w-[100px] shrink-0">Em uso há</div>
+            <div className="w-[130px] shrink-0">Banhos realizados</div>
+            <div className="w-[130px] shrink-0 text-right">Status</div>
           </div>
           {produtos.length === 0 && <div className="py-3 text-[13px] text-text-muted">Nenhum produto em uso.</div>}
           {produtos.map((p) => (
-            <div key={p.id} className="flex items-center gap-[14px] border-b border-[#ece5d8] py-[13px] last:border-none">
+            <div key={p.id} className="flex min-w-[560px] items-center gap-[14px] border-b border-[#ece5d8] py-[13px] last:border-none">
               <div className="flex-[1.6] text-[13px] font-bold">{p.nome}</div>
-              <div className="w-[90px] text-[12.5px] text-text-soft">{formatBR(p.data_abertura)}</div>
-              <div className="w-[100px] text-[12.5px] text-text-soft">{diasEmUso(p.data_abertura)} dias</div>
-              <div className="w-[130px] text-[12.5px] text-text-soft">{p.banhos_realizados} banhos</div>
-              <div className="flex w-[130px] items-center justify-end gap-2">
+              <div className="w-[90px] shrink-0 text-[12.5px] text-text-soft">{formatBR(p.data_abertura)}</div>
+              <div className="w-[100px] shrink-0 text-[12.5px] text-text-soft">{diasEmUso(p.data_abertura)} dias</div>
+              <div className="w-[130px] shrink-0 text-[12.5px] text-text-soft">{p.banhos_realizados} banhos</div>
+              <div className="flex w-[130px] shrink-0 items-center justify-end gap-2">
                 <span className={clsx('rounded-pill px-[11px] py-1 text-[10.5px] font-extrabold', ESTOQUE_CLASSES[p.status])}>
                   {ESTOQUE_LABEL[p.status]}
                 </span>
@@ -148,20 +148,25 @@ export function Estoque() {
         </Card>
       )}
 
-      <Card className="flex items-center gap-6 p-[22px]">
-        <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-tint to-blue-bar1 text-blue">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="8" r="3" />
-            <path d="M12 11v10M8 15l4-4 4 4" />
-          </svg>
+      <Card className="flex flex-col items-start gap-4 p-[22px] sm:flex-row sm:items-center sm:gap-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-tint to-blue-bar1 text-blue">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="3" />
+              <path d="M12 11v10M8 15l4-4 4 4" />
+            </svg>
+          </div>
+          <div className="sm:hidden">
+            <div className="text-[13.5px] font-extrabold">Laços</div>
+          </div>
         </div>
-        <div className="flex-1">
+        <div className="hidden flex-1 sm:block">
           <div className="text-[13.5px] font-extrabold">Laços</div>
           <div className="mt-[2px] text-[11.5px] text-text-muted">
             Reposição calculada com base no número de procedimentos realizados
           </div>
         </div>
-        <div className="flex items-center gap-[26px]">
+        <div className="flex flex-wrap items-center gap-[26px]">
           <div className="text-center">
             <div className="text-[20px] font-extrabold">{comprados}</div>
             <div className="text-[10.5px] font-bold uppercase text-text-faint">Comprados</div>
@@ -176,7 +181,7 @@ export function Estoque() {
             </div>
             <div className="text-[10.5px] font-bold uppercase text-text-faint">Restantes</div>
           </div>
-          <div className="w-[160px]">
+          <div className="w-full sm:w-[160px]">
             <div className="h-2 overflow-hidden rounded-pill bg-border-faint">
               <div
                 className={clsx('h-full rounded-pill', lacosAlerta ? 'bg-gradient-to-r from-terracota to-terracota-dark' : 'bg-gradient-to-r from-blue to-blue-dark')}
@@ -190,13 +195,13 @@ export function Estoque() {
         </div>
       </Card>
 
-      <Card className="flex items-center gap-3 p-4">
+      <Card className="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center">
         <input
           placeholder="Quantidade comprada"
           value={novaCompra}
           onChange={(e) => setNovaCompra(e.target.value)}
           inputMode="numeric"
-          className="w-48 rounded-xl border border-border bg-[#fbf9f5] px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue"
+          className="rounded-xl border border-border bg-[#fbf9f5] px-[13px] py-[10px] text-[12.5px] outline-none focus:border-blue sm:w-48"
         />
         <button
           onClick={registrarCompraLacos}
